@@ -1,5 +1,5 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/jaypipes/delta.svg)](https://pkg.go.dev/github.com/jaypipes/delta)
-[![Test Status](https://github.com/jaypipes/delta/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/jaypipes/delta/actions)
+[![Test Status](https://github.com/jaypipes/delta/actions/workflows/test-unit.yml/badge.svg?branch=main)](https://github.com/jaypipes/delta/actions)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 `delta` is a Go library that facilitates efficient diffing of things.
