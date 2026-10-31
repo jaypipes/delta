@@ -36,12 +36,12 @@ func IsScalar(subject any) bool {
 // - true is equivalent to "t"
 // - true is equivalent to "TRUE"
 // - true is equivalent to "1"
-// - true is equivalent to any numeric type that is equal to 1
+// - true is equivalent to any integer type that is equal to 1
 // - false is equivalent to "false"
 // - false is equivalent to "f"
 // - false is equivalent to "FALSE"
 // - false is equivalent to "0"
-// - false is equivalent to any numeric type that is equal to 0.
+// - false is equivalent to any integer type that is equal to 0.
 // - "3.1415" is equivalent to float32(3.1415) and float64(3.1415)
 //
 // Comparing integer types to float types always returns false.
