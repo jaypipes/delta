@@ -96,8 +96,8 @@ func (d *Delta) CollectAt(
 		return CannotCompareTypes(a, b)
 	}
 
-	if isScalar(a) && isScalar(b) {
-		if equalScalars(a, b) {
+	if IsScalar(a) && IsScalar(b) {
+		if ScalarEquivalent(a, b) {
 			return nil
 		}
 		// this represents a "leaf node" difference.
@@ -112,14 +112,14 @@ func (d *Delta) CollectAt(
 		return nil
 	}
 
-	if isSlice(a) {
-		as := sliceOfAny(a)
-		bs := sliceOfAny(b)
-		equal, sameSort := compareSlices(as, bs)
-		if equal && sameSort {
+	if IsSlice(a) {
+		as := ToAnySlice(a)
+		bs := ToAnySlice(b)
+		sd := SliceDifference(as, bs)
+		if sd.Equal() {
 			return nil
 		}
-		if equal && !sameSort {
+		if sd.ElementsEqual() && !sd.SameSortOrder {
 			dt = DifferenceTypeOrder
 		}
 		d.Push(
