@@ -4,8 +4,11 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/jaypipes/delta/fieldpath"
 	"github.com/samber/lo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/jaypipes/delta/fieldpath"
 )
 
 // Differ allows custom types that know how to determine differences between
@@ -25,8 +28,9 @@ type Differ interface {
 // If `a` implements the `Differ` interface, then `Diff` will call
 // `a.Diff(b)`.
 //
-// If `a` does not implement the `Differ` interface and the type of `a` and `b`
-// is not comparable, ErrTypeComparison will be returned.
+// If `a` does not implement the `Differ` interface and is not an
+// `unstructured.Unstructured` or `unstructured.UnstructuredList`, we check to
+// see if `a` and `b` are comparable, and if not, return ErrTypeComparison.
 func Diff(a, b any) (Delta, error) {
 	differ, ok := a.(Differ)
 	if ok {
@@ -58,7 +62,23 @@ func isScalar(subject any) bool {
 
 // isSlice returns true if the supplied subject is a slice of something.
 func isSlice(subject any) bool {
+	if isKubeSliceType(subject) {
+		return true
+	}
 	return reflect.TypeOf(subject).Kind() == reflect.Slice
+}
+
+// isSameKubeSlice return true if the supplied subject is a kube
+func isKubeSliceType(subject any) bool {
+	switch subject.(type) {
+	case *unstructured.UnstructuredList,
+		unstructured.UnstructuredList,
+		*metav1.PartialObjectMetadataList,
+		metav1.PartialObjectMetadataList:
+		return true
+	default:
+		return false
+	}
 }
 
 // areComparable returns true if the types of the supplied subjects are naively
@@ -75,9 +95,11 @@ func areComparable(a, b any) bool {
 		return false
 	}
 	if isSlice(a) && isSlice(b) {
+		as := sliceOfAny(a)
+		bs := sliceOfAny(b)
 		return areComparable(
-			reflect.TypeOf(a).Elem(),
-			reflect.TypeOf(b).Elem(),
+			reflect.TypeOf(as).Elem(),
+			reflect.TypeOf(bs).Elem(),
 		)
 	}
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
@@ -181,11 +203,27 @@ func toInt64(v any) int64 {
 	return 0
 }
 
-// sliceOfAny returns a []any for the supplied scalar slice-valued thing.
+// sliceOfAny returns a []any for the supplied slice-valued thing.
 func sliceOfAny(subject any) []any {
 	switch subject := subject.(type) {
 	case []any:
 		return subject
+	case unstructured.UnstructuredList:
+		out := make([]any, len(subject.Items))
+		for x, item := range subject.Items {
+			out[x] = &item
+		}
+		return out
+	case *unstructured.UnstructuredList:
+		out := make([]any, len(subject.Items))
+		for x, item := range subject.Items {
+			out[x] = &item
+		}
+		return out
+	case *metav1.PartialObjectMetadataList:
+		return lo.ToAnySlice(subject.Items)
+	case []*unstructured.Unstructured:
+		return lo.ToAnySlice(subject)
 	case []rune:
 		return lo.ToAnySlice(subject)
 	case []string:
