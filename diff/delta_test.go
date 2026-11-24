@@ -1,11 +1,12 @@
-package delta_test
+package diff_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jaypipes/delta"
+	"github.com/jaypipes/delta/diff"
 	"github.com/jaypipes/delta/fieldpath"
 )
 
@@ -16,51 +17,51 @@ var (
 )
 
 var (
-	diffAB_SpecReplicas = delta.Difference{
+	diffAB_SpecReplicas = diff.Difference{
 		FieldPath: fpSpecReplicas,
-		Type:      delta.DifferenceTypeModify,
+		Kind:      diff.DifferenceModify,
 		From:      1,
 		To:        2,
 	}
-	diffAB_StatusReadyReplicas = delta.Difference{
+	diffAB_StatusReadyReplicas = diff.Difference{
 		FieldPath: fpStatusReadyReplicas,
-		Type:      delta.DifferenceTypeModify,
+		Kind:      diff.DifferenceModify,
 		From:      0,
 		To:        1,
 	}
-	diffAC_StatusReadyReplicas = delta.Difference{
+	diffAC_StatusReadyReplicas = diff.Difference{
 		FieldPath: fpStatusReadyReplicas,
-		Type:      delta.DifferenceTypeModify,
+		Kind:      diff.DifferenceModify,
 		From:      0,
 		To:        1,
 	}
-	diffBC_SpecReplicas = delta.Difference{
+	diffBC_SpecReplicas = diff.Difference{
 		FieldPath: fpSpecReplicas,
-		Type:      delta.DifferenceTypeModify,
+		Kind:      diff.DifferenceModify,
 		From:      2,
 		To:        1,
 	}
-	diffBC_StatusReadyReplicas = delta.Difference{
+	diffBC_StatusReadyReplicas = diff.Difference{
 		FieldPath: fpStatusReadyReplicas,
-		Type:      delta.DifferenceTypeModify,
+		Kind:      diff.DifferenceModify,
 		From:      1,
 		To:        0,
 	}
 )
 
 var (
-	emptyDelta = delta.Delta{}
+	emptyDelta = diff.Delta{}
 	// B is different from A in spec.replicas and status.readyReplicas
-	deltaAB = delta.Delta{
+	deltaAB = diff.Delta{
 		diffAB_SpecReplicas,
 		diffAB_StatusReadyReplicas,
 	}
 	// C is different from A only in status.readyReplicas
-	deltaAC = delta.Delta{
+	deltaAC = diff.Delta{
 		diffAC_StatusReadyReplicas,
 	}
 	// C is different from B in spec.replicas and status.readyReplicas
-	deltaBC = delta.Delta{
+	deltaBC = diff.Delta{
 		diffBC_SpecReplicas,
 		diffBC_StatusReadyReplicas,
 	}
@@ -69,7 +70,7 @@ var (
 func TestDelta_Different(t *testing.T) {
 	cases := []struct {
 		name    string
-		subject delta.Delta
+		subject diff.Delta
 		exp     bool
 	}{
 		{
@@ -93,25 +94,25 @@ func TestDelta_Different(t *testing.T) {
 
 func TestDelta_ExtendAt(t *testing.T) {
 	require := require.New(t)
-	abc := delta.Delta{}
+	abc := diff.Delta{}
 	abc.ExtendAt(fieldpath.FromString("ab"), deltaAB)
 	abc.ExtendAt(fieldpath.FromString("ac"), deltaAC)
-	expected := delta.Delta{
+	expected := diff.Delta{
 		{
 			FieldPath: fieldpath.FromString("ab.spec.replicas"),
-			Type:      delta.DifferenceTypeModify,
+			Kind:      diff.DifferenceModify,
 			From:      1,
 			To:        2,
 		},
 		{
 			FieldPath: fieldpath.FromString("ab.status.readyReplicas"),
-			Type:      delta.DifferenceTypeModify,
+			Kind:      diff.DifferenceModify,
 			From:      0,
 			To:        1,
 		},
 		{
 			FieldPath: fieldpath.FromString("ac.status.readyReplicas"),
-			Type:      delta.DifferenceTypeModify,
+			Kind:      diff.DifferenceModify,
 			From:      0,
 			To:        1,
 		},
@@ -122,7 +123,7 @@ func TestDelta_ExtendAt(t *testing.T) {
 func TestDelta_DifferentAt(t *testing.T) {
 	cases := []struct {
 		name    string
-		subject delta.Delta
+		subject diff.Delta
 		path    fieldpath.FieldPath
 		exp     bool
 	}{
@@ -195,10 +196,48 @@ func TestDelta_DifferentAt(t *testing.T) {
 	}
 }
 
+// Use `Delta.DifferencesAt()` to return the differences at a particular field
+// path. All differences at the specified field path "and below" are returned.
+//
+// If we wanted to get the differences in the `status` field of our Deployment
+// maps, we would use `Delta.DifferencesAt(fieldpath.FromString("status"))`:
+func ExampleDelta_DifferencesAt() {
+	var deploy1 = map[string]any{
+		"spec": map[string]any{
+			"replicas": 1,
+		},
+		"status": map[string]any{
+			"readyReplicas":      1,
+			"observedGeneration": 1,
+		},
+	}
+	var deploy2 = map[string]any{
+		"spec": map[string]any{
+			"replicas": 3,
+		},
+		"status": map[string]any{
+			"readyReplicas": 2,
+		},
+	}
+
+	d, err := diff.Diff(deploy1, deploy2)
+	if err != nil {
+		fmt.Printf("error diffing vars: %s\n", err)
+		return
+	}
+	statusDiffs := d.DifferencesAt(fieldpath.FromString("status"))
+	for _, statusDiff := range statusDiffs {
+		fmt.Println(statusDiff)
+	}
+	// Output:
+	// status.observedGeneration REMOVE previous value: 1
+	// status.readyReplicas MODIFY 1 -> 2
+}
+
 func TestDelta_DifferentExcept(t *testing.T) {
 	cases := []struct {
 		name    string
-		subject delta.Delta
+		subject diff.Delta
 		paths   []fieldpath.FieldPath
 		exp     bool
 	}{
@@ -244,24 +283,24 @@ func TestDelta_DifferentExcept(t *testing.T) {
 func TestDelta_DifferencesExcept(t *testing.T) {
 	cases := []struct {
 		name    string
-		subject delta.Delta
+		subject diff.Delta
 		paths   []fieldpath.FieldPath
-		exp     []delta.Difference
+		exp     []diff.Difference
 	}{
 		{
 			"empty delta",
 			emptyDelta,
 			[]fieldpath.FieldPath{fpSpecReplicas},
-			[]delta.Difference{},
+			[]diff.Difference{},
 		},
 		{
 			"AB except spec.replicas",
 			deltaAB,
 			[]fieldpath.FieldPath{fpSpecReplicas},
-			[]delta.Difference{
+			[]diff.Difference{
 				{
 					FieldPath: fieldpath.FromString("status.readyReplicas"),
-					Type:      delta.DifferenceTypeModify,
+					Kind:      diff.DifferenceModify,
 					From:      0,
 					To:        1,
 				},
@@ -271,28 +310,28 @@ func TestDelta_DifferencesExcept(t *testing.T) {
 			"AB except spec.replicas and status.readyReplicas",
 			deltaAB,
 			[]fieldpath.FieldPath{fpSpecReplicas, fpStatusReadyReplicas},
-			[]delta.Difference{},
+			[]diff.Difference{},
 		},
 		{
 			"AC except status.readyReplicas",
 			deltaAC,
 			[]fieldpath.FieldPath{fpStatusReadyReplicas},
-			[]delta.Difference{}, // because above path is the only diffs
+			[]diff.Difference{}, // because above path is the only diffs
 		},
 		{
 			"no supplied field paths and non-empty delta",
 			deltaAB,
 			nil,
-			[]delta.Difference{
+			[]diff.Difference{
 				{
 					FieldPath: fieldpath.FromString("spec.replicas"),
-					Type:      delta.DifferenceTypeModify,
+					Kind:      diff.DifferenceModify,
 					From:      1,
 					To:        2,
 				},
 				{
 					FieldPath: fieldpath.FromString("status.readyReplicas"),
-					Type:      delta.DifferenceTypeModify,
+					Kind:      diff.DifferenceModify,
 					From:      0,
 					To:        1,
 				},
@@ -305,4 +344,42 @@ func TestDelta_DifferencesExcept(t *testing.T) {
 			require.Equal(c.exp, c.subject.DifferencesExcept(c.paths...))
 		})
 	}
+}
+
+// Use `Delta.DifferencesExcept()` to return any differences *other than those
+// at a particular field path*.
+//
+// If we wanted to get the differences between our Deployment maps but did not
+// care about the `status` values, we would use
+// `Delta.DifferencesExcept(fieldpath.FromString("status"))`:
+func ExampleDelta_DifferencesExcept() {
+	var deploy1 = map[string]any{
+		"spec": map[string]any{
+			"replicas": 1,
+		},
+		"status": map[string]any{
+			"readyReplicas":      1,
+			"observedGeneration": 1,
+		},
+	}
+	var deploy2 = map[string]any{
+		"spec": map[string]any{
+			"replicas": 3,
+		},
+		"status": map[string]any{
+			"readyReplicas": 2,
+		},
+	}
+
+	d, err := diff.Diff(deploy1, deploy2)
+	if err != nil {
+		fmt.Printf("error diffing vars: %s\n", err)
+		return
+	}
+	notStatusDiffs := d.DifferencesExcept(fieldpath.FromString("status"))
+	for _, notStatusDiff := range notStatusDiffs {
+		fmt.Println(notStatusDiff)
+	}
+	// Output:
+	// spec.replicas MODIFY 1 -> 3
 }
