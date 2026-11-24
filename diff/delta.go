@@ -1,11 +1,11 @@
-package delta
+package diff
 
 import (
-	"sort"
 	"strings"
 
-	"github.com/jaypipes/delta/fieldpath"
 	"github.com/samber/lo"
+
+	"github.com/jaypipes/delta/fieldpath"
 )
 
 // ZeroGen is a sentinel type used in creating Deltas for new things.
@@ -33,165 +33,12 @@ func (d *Delta) ExtendAt(
 			*d,
 			Difference{
 				FieldPath: fieldpath.Prefixed(diff.FieldPath, at...),
-				Type:      diff.Type,
+				Kind:      diff.Kind,
 				From:      diff.From,
 				To:        diff.To,
 			},
 		)
 	}
-}
-
-// CollectAt recursively adds any detected differences in the supplied values
-// to the Delta, adding a nested field path for each level of nested map or
-// struct values examined.
-func (d *Delta) CollectAt(
-	fp fieldpath.FieldPath,
-	a any,
-	b any,
-) error {
-	differ, ok := a.(Differ)
-	if ok {
-		other, err := differ.Diff(b)
-		if err != nil {
-			return err
-		}
-		d.ExtendAt(fp, other)
-		return nil
-	}
-
-	dt := DifferenceTypeModify
-	if a == nil {
-		if b == nil {
-			// No difference... so just return.
-			return nil
-		}
-		// the `b` thing has a value. the `a` thing does not, so this is an
-		// additive difference.
-		d.Push(
-			Difference{
-				Type:      DifferenceTypeAdd,
-				FieldPath: fp,
-				From:      nil,
-				To:        b,
-			},
-		)
-		return nil
-	} else {
-		if b == nil {
-			// the `a` thing has a value. the `b` thing does not, so this is a
-			// removing difference.
-			d.Push(
-				Difference{
-					Type:      DifferenceTypeRemove,
-					FieldPath: fp,
-					From:      a,
-					To:        nil,
-				},
-			)
-			return nil
-		}
-	}
-
-	if !areComparable(a, b) {
-		return CannotCompareTypes(a, b)
-	}
-
-	if IsScalar(a) && IsScalar(b) {
-		if ScalarEquivalent(a, b) {
-			return nil
-		}
-		// this represents a "leaf node" difference.
-		d.Push(
-			Difference{
-				Type:      dt,
-				FieldPath: fp,
-				From:      a,
-				To:        b,
-			},
-		)
-		return nil
-	}
-
-	if IsSlice(a) {
-		as := ToAnySlice(a)
-		bs := ToAnySlice(b)
-		sd := SliceDifference(as, bs)
-		if sd.Equal() {
-			return nil
-		}
-		if sd.ElementsEqual() && !sd.SameSortOrder {
-			dt = DifferenceTypeOrder
-		}
-		d.Push(
-			Difference{
-				Type:      dt,
-				FieldPath: fp,
-				From:      a,
-				To:        b,
-			},
-		)
-		return nil
-	}
-
-	// Finally, we treat map[string]any specially since this is the type of
-	// json.Raw
-	switch a := a.(type) {
-	case map[string]any:
-		switch b := b.(type) {
-		case map[string]any:
-			return d.collectMapDifferences(fp, a, b)
-		}
-	}
-	return CannotCompareTypes(a, b)
-}
-
-// collectMapDifferences recursively adds any detected differences in the
-// supplied map of string to interface values to the Delta, adding a
-// nested field path for each level of map values examined.
-func (d *Delta) collectMapDifferences(
-	fp fieldpath.FieldPath,
-	a map[string]any,
-	b map[string]any,
-) error {
-	akeys := lo.Keys(a)
-	sort.Strings(akeys)
-	bkeys := lo.Keys(b)
-	sort.Strings(bkeys)
-	keysNotInB, keysNotInA := lo.Difference(akeys, bkeys)
-	for _, k := range keysNotInB {
-		err := d.CollectAt(
-			fieldpath.Prefixed(fieldpath.FromString(k), fp...),
-			a[k],
-			nil,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	for _, k := range keysNotInA {
-		err := d.CollectAt(
-			fieldpath.Prefixed(fieldpath.FromString(k), fp...),
-			nil,
-			b[k],
-		)
-		if err != nil {
-			return err
-		}
-	}
-	keysInBoth := lo.Intersect(akeys, bkeys)
-	for _, k := range keysInBoth {
-		av := a[k]
-		bv := b[k]
-		err := d.CollectAt(
-			fieldpath.Prefixed(fieldpath.FromString(k), fp...),
-			av,
-			bv,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // Differences returns the Delta's slice of Differences
