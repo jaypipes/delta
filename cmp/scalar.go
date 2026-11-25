@@ -27,15 +27,30 @@ func comparableScalars(a any, b any, opts Options) bool {
 		return false
 	}
 
+	// Both `string` and `MyByteArrayType` are scalars.  However, `string`
+	// is not a slice, but `MyByteArrayType` *is* a slice.
+	//
+	// Here, we check to see if we are comparing a `[]string` (or
+	// `[]MyByteArrayType`) with a `MyByteArrayType` and return false if
+	// so.
+	aIsBATD := types.IsByteArrayTypeDef(a)
+	bIsBATD := types.IsByteArrayTypeDef(b)
+
+	if aIsBATD && bIsBATD {
+		return true
+	}
+
 	ap := a
-	aIsPrimTypeDef := types.IsPrimitiveTypeDef(a)
-	if aIsPrimTypeDef {
+	if aIsBATD {
+		ap = []byte{0}
+	} else if types.IsPrimitiveTypeDef(a) {
 		ap = types.UnderlyingPrimitive(a)
 	}
 
 	bp := b
-	bIsPrimTypeDef := types.IsPrimitiveTypeDef(b)
-	if bIsPrimTypeDef {
+	if bIsBATD {
+		bp = []byte{0}
+	} else if types.IsPrimitiveTypeDef(b) {
 		bp = types.UnderlyingPrimitive(b)
 	}
 	return comparablePrimitives(ap, bp, opts)

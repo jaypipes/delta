@@ -116,6 +116,15 @@ func IsPrimitiveTypeDef(subject any) bool {
 	}
 }
 
+// IsByteArrayTypeDef returns true if the supplied subject is a type
+// definition over `[]byte`.
+//
+// Note that Both `string` and `MyByteArrayType` are scalars.  However, `string`
+// is not a slice, but `MyByteArrayType` *is* a slice.
+func IsByteArrayTypeDef(subject any) bool {
+	return IsPrimitiveTypeDef(subject) && IsSlice(subject)
+}
+
 // PrimitiveTypeDefName returns the string name of the supplied subject's Go
 // type definition that defines a built-in primitive as a custom type.
 //

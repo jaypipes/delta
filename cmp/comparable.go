@@ -21,21 +21,29 @@ func Comparable(a any, b any, opts ...Option) bool {
 		opt(&o)
 	}
 
-	aIsScalar := ac == types.Scalar
-	bIsScalar := bc == types.Scalar
+	aIsScalar := types.IsScalar(a)
+	bIsScalar := types.IsScalar(b)
 
-	if aIsScalar && bIsScalar {
+	// Both `string` and `MyByteArrayType` are scalars.  However, `string`
+	// is not a slice, but `MyByteArrayType` *is* a slice.
+	//
+	// Here, we check to see if we are comparing a `[]string` (or
+	// `[]MyByteArrayType`) with a `MyByteArrayType` and return false if
+	// so.
+	aIsBATD := types.IsByteArrayTypeDef(a)
+	bIsBATD := types.IsByteArrayTypeDef(b)
+
+	switch {
+	case aIsScalar && bIsScalar:
+		return comparableScalars(a, b, o)
+	case aIsScalar && bIsBATD:
+		return comparableScalars(a, b, o)
+	case bIsScalar && aIsBATD:
 		return comparableScalars(a, b, o)
 	}
 
-	// You cannot compare a scalar to a non-scalar, so if only one argument is
-	// a scalar, we don't need to go any further.
-	if aIsScalar || bIsScalar {
-		return false
-	}
-
-	aIsSlice := ac == types.Slice
-	bIsSlice := bc == types.Slice
+	aIsSlice := types.IsSlice(a)
+	bIsSlice := types.IsSlice(b)
 
 	if aIsSlice && bIsSlice {
 		return comparableSlices(a, b, o)

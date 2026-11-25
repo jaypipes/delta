@@ -49,18 +49,16 @@ func TestComparable_DefaultOptions(t *testing.T) {
 		testtypes.UniquePairsPrimitiveIntegerZeroValues,
 		testtypes.UniquePairsPrimitiveFloatZeroValues,
 		testtypes.UniquePairsPrimitiveStringZeroValues,
+		// default compare options treat Go type definitions as their
+		// underlying primitive type.
+		testtypes.UniquePairsPrimitiveTypeDefIntegerZeroValues,
+		testtypes.UniquePairsPrimitiveTypeDefFloatZeroValues,
+		testtypes.UniquePairsPrimitiveTypeDefStringZeroValues,
 		[][2]any{
 			// when either argument to Compare is nil, returns true.
 			{nil, 1},
-			// default compare options treat Go type definitions as their
-			// underlying primitive type.
-			{testtypes.MyIntType(0), 0},
-			// Sign doesn't matter by default.
-			{testtypes.MyIntType(0), uint(0)},
-			// Neither does size.
-			{testtypes.MyInt16Type(0), int64(0)},
 			// slices of primitives or primitive type definitions are
-			// comparable if the element type is comparable.
+			// comparable if the underlying element type is comparable.
 			{[]string{"1"}, []int{1}},
 			{[]string{"1"}, [][]byte{[]byte("1")}},
 		},
@@ -103,6 +101,10 @@ func TestComparable_NoResolveTypeDef(t *testing.T) {
 		{testtypes.MyIntType(0), 0},
 		{testtypes.MyIntType(0), uint(0)},
 		{testtypes.MyInt16Type(0), int64(0)},
+		// slices of primitives type definitions are not comparable when
+		// NoResolveTypeDef is true.
+		{[]string{"1"}, []testtypes.MyStringType{"1"}},
+		{[]int64{1}, []testtypes.MyInt64Type{1}},
 	}
 	t.Run("not comparable", func(t *testing.T) {
 		assert := assert.New(t)
@@ -135,6 +137,10 @@ func TestComparable_NoResolveTypeDef(t *testing.T) {
 		[][2]any{
 			// when either argument to Compare is nil, returns true.
 			{nil, 1},
+			// slices of primitives are comparable if the element type is
+			// comparable.
+			{[]string{"1"}, []int{1}},
+			{[]string{"1"}, [][]byte{[]byte("1")}},
 		},
 	)
 	t.Run("comparable", func(t *testing.T) {
@@ -254,6 +260,11 @@ func TestComparable_NoConvert(t *testing.T) {
 			// func and channel types are not comparable to each other.
 			{func() {}, 1},
 			{make(chan int, 0), 1},
+			// []string and []byte are not comparable because []byte is
+			// comparable to a single string, not a slice of strings.
+			{[]string{"1"}, []byte("1")},
+			{[]string{"1"}, testtypes.MyByteArrayType("1")},
+			{[]string{"1"}, []testtypes.MyInt64Type{1}},
 		},
 	)
 	t.Run("not comparable", func(t *testing.T) {
@@ -302,6 +313,13 @@ func TestComparable_NoConvert(t *testing.T) {
 			{testtypes.MyIntType(0), testtypes.MyInt8Type(0)},
 			{testtypes.MyIntType(0), testtypes.MyUintType(0)},
 			{testtypes.MyInt32Type(0), testtypes.MyInt64Type(0)},
+			// slices of primitive type definitions are comparable as long as the
+			// underlying primitive is the same.
+			{[]string{"1"}, []testtypes.MyStringType{"1"}},
+			{[]string{"1"}, []testtypes.MyByteArrayType{
+				testtypes.MyByteArrayType("1")},
+			},
+			{[]int64{1}, []testtypes.MyInt64Type{1}},
 		},
 	)
 	t.Run("comparable", func(t *testing.T) {

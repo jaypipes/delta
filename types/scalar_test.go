@@ -9,7 +9,7 @@ import (
 	testtypes "github.com/jaypipes/delta/internal/testing/types"
 	"github.com/jaypipes/delta/types"
 	"github.com/samber/lo"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsScalar(t *testing.T) {
@@ -23,9 +23,9 @@ func TestIsScalar(t *testing.T) {
 		[]string{"a"},
 	}
 	t.Run("not scalars", func(t *testing.T) {
-		require := require.New(t)
+		assert := assert.New(t)
 		for _, subject := range notScalars {
-			require.False(
+			assert.False(
 				types.IsScalar(subject),
 				fmt.Sprintf(
 					"expected %v (%T) not to be a scalar",
@@ -43,9 +43,9 @@ func TestIsScalar(t *testing.T) {
 	)
 
 	t.Run("scalars", func(t *testing.T) {
-		require := require.New(t)
+		assert := assert.New(t)
 		for _, subject := range scalars {
-			require.True(
+			assert.True(
 				types.IsScalar(subject),
 				fmt.Sprintf(
 					"expected %v (%T) to be a scalar",

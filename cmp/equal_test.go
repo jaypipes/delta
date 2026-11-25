@@ -51,21 +51,31 @@ func TestEqual_DefaultOptions(t *testing.T) {
 		testtypes.UniquePairsPrimitiveIntegerZeroValues,
 		testtypes.UniquePairsPrimitiveFloatZeroValues,
 		testtypes.UniquePairsPrimitiveStringZeroValues,
+		testtypes.UniquePairsSlicePrimitiveIntegerZeroValues,
+		testtypes.UniquePairsSlicePrimitiveFloatZeroValues,
+		testtypes.UniquePairsSlicePrimitiveStringZeroValues,
+		// default compare options treat Go type definitions as their
+		// underlying primitive type.
+		testtypes.UniquePairsPrimitiveTypeDefIntegerZeroValues,
+		testtypes.UniquePairsPrimitiveTypeDefFloatZeroValues,
+		testtypes.UniquePairsPrimitiveTypeDefStringZeroValues,
+		testtypes.UniquePairsSlicePrimitiveTypeDefIntegerZeroValues,
+		testtypes.UniquePairsSlicePrimitiveTypeDefFloatZeroValues,
+		testtypes.UniquePairsSlicePrimitiveTypeDefStringZeroValues,
 		[][2]any{
 			// if both a and b are `nil`, Equal always returns true
 			{nil, nil},
-			// default compare options treat Go type definitions as their
-			// underlying primitive type.
-			{testtypes.MyIntType(0), 0},
-			// Sign doesn't matter by default.
-			{testtypes.MyIntType(0), uint(0)},
-			// Neither does size.
-			{testtypes.MyInt16Type(0), int64(0)},
-			// slices of primitives or primitive type definitions are equal if
-			// the element type is comparable and the sorted slice of elements
-			// is the same.
+			// slices of primitives or primitive type definitions are
+			// comparable if the underlying element type is comparable.
 			{[]string{"1"}, []int{1}},
 			{[]string{"1"}, [][]byte{[]byte("1")}},
+			// Type definitions are first resolved to their underlying type and
+			// then compared.
+			{testtypes.MyIntType(0), 0},
+			{testtypes.MyUintType(0), uint(0)},
+			{testtypes.MyInt64Type(0), int64(0)},
+			{testtypes.MyStringType("0"), int64(0)},
+			{testtypes.MyByteArrayType("0"), int64(0)},
 		},
 	)
 

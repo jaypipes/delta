@@ -19,9 +19,6 @@ func Equal(a any, b any, opts ...Option) bool {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	if !Comparable(a, b, opts...) {
-		return false
-	}
 	return equal(a, b, o)
 }
 
@@ -55,28 +52,38 @@ func equal(a any, b any, opts Options) bool {
 	aIsScalar := types.IsScalar(a)
 	bIsScalar := types.IsScalar(b)
 
-	if aIsScalar && bIsScalar {
-		return equalScalars(a, b, opts)
-	}
-
-	// You cannot compare a scalar to a non-scalar, so if only one argument is
-	// a scalar, we don't need to go any further.
-	if aIsScalar || bIsScalar {
-		return false
-	}
-
 	aIsSlice := types.IsSlice(a)
 	bIsSlice := types.IsSlice(b)
 
-	if aIsSlice && bIsSlice {
-		return equalSlices(a, b, opts)
-	}
+	// Both `string` and `MyByteArrayType` are scalars.  However, `string`
+	// is not a slice, but `MyByteArrayType` *is* a slice.
+	//
+	// Here, we check to see if we are comparing a `[]string` (or
+	// `[]MyByteArrayType`) with a `MyByteArrayType` and return false if
+	// so.
+	aIsBATD := types.IsByteArrayTypeDef(a)
+	bIsBATD := types.IsByteArrayTypeDef(b)
 
-	// You cannot compare a slice to a non slice, so if only one argument is a
-	// slice, we don't need to go any further.
-	if aIsSlice || bIsSlice {
+	switch {
+	case aIsScalar && bIsScalar:
+		return equalScalars(a, b, opts)
+	case aIsScalar && bIsBATD:
+		return equalScalars(a, b, opts)
+	case bIsScalar && aIsBATD:
+		return equalScalars(a, b, opts)
+	case aIsSlice && bIsSlice:
+		return equalSlices(a, b, opts)
+	case aIsSlice && bIsBATD:
+		return equalSlices(a, b, opts)
+	case bIsSlice && aIsBATD:
+		return equalSlices(a, b, opts)
+	case aIsSlice || bIsSlice:
+		// You cannot compare a slice to a non slice, so if only one argument
+		// is a slice, we don't need to go any further.
 		return false
 	}
+
+	// If we get here, both a and b must be Record types.
 	// TODO
 	return equalRecords(a, b, opts)
 }

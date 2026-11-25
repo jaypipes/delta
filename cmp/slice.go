@@ -40,10 +40,26 @@ func comparableSliceScalars(a any, b any, opts Options) bool {
 		return comparableSlicePrimitives(a, b, opts)
 	}
 
-	if opts.NoResolveTypeDef || opts.NoCast || opts.NoConvert {
+	if opts.NoResolveTypeDef {
 		return false
 	}
-	return convert.Convertible(a, b)
+
+	// One or both of the supplied slices of scalars are slices of primitive
+	// type defs. Resolve to the slice of underlying primitive and compare
+	// those.
+
+	ap := a
+	aIsSlicePrimTypeDef := types.IsSlicePrimitiveTypeDef(a)
+	if aIsSlicePrimTypeDef {
+		ap = types.SliceUnderlyingPrimitive(a)
+	}
+
+	bp := b
+	bIsSlicePrimTypeDef := types.IsSlicePrimitiveTypeDef(b)
+	if bIsSlicePrimTypeDef {
+		bp = types.SliceUnderlyingPrimitive(b)
+	}
+	return comparableSlicePrimitives(ap, bp, opts)
 }
 
 // comparableSlicePrimitives returns true if the two supplied slices of
@@ -208,6 +224,10 @@ func equalSliceScalars(a any, b any, opts Options) bool {
 		return false
 	}
 
+	// One or both of the supplied slices of scalars are slices of primitive
+	// type defs. Resolve to the slice of underlying primitive and compare
+	// those.
+
 	ap := a
 	aIsSlicePrimTypeDef := types.IsSlicePrimitiveTypeDef(a)
 	if aIsSlicePrimTypeDef {
@@ -218,6 +238,17 @@ func equalSliceScalars(a any, b any, opts Options) bool {
 	bIsSlicePrimTypeDef := types.IsSlicePrimitiveTypeDef(b)
 	if bIsSlicePrimTypeDef {
 		bp = types.SliceUnderlyingPrimitive(b)
+	}
+	if ap == nil || bp == nil {
+		// There is no easy way to differentiate between a string and a []byte.
+		// A string is *not* a slice of primitive but a []byte *is* a slice of
+		// primitive.
+		//
+		// So, if a is []string and b is MyByteArrayType, we fall into this
+		// block because IsSlicePrimitive returns true for both []string and
+		// MyByteArrayType but SliceUnderlyingPrimitive returns nil for
+		// MyByteArrayType and []string for []string arguments.
+		return false
 	}
 	return equalSlicePrimitives(ap, bp, opts)
 }

@@ -77,9 +77,7 @@ func SliceScalarPrimitiveElementZeroValue(subject any) any {
 		return []float32{}
 	case []float64:
 		return []float64{}
-	case [][]byte:
-		return [][]byte{}
-	case []string:
+	case [][]byte, []string:
 		return []string{}
 	case []bool:
 		return []bool{}
@@ -107,7 +105,7 @@ func IsSlicePrimitive(subject any) bool {
 // IsSlicePrimitiveTypeDef returns true if the supplied subject is a slice of
 // Go type definition that defines a built-in primitive as a custom type.
 func IsSlicePrimitiveTypeDef(subject any) bool {
-	if subject == nil || !IsSlice(subject) {
+	if !IsSlice(subject) || IsSlicePrimitive(subject) {
 		return false
 	}
 	et := reflect.TypeOf(subject).Elem()
@@ -116,9 +114,14 @@ func IsSlicePrimitiveTypeDef(subject any) bool {
 	case
 		reflect.Bool,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Float32, reflect.Float64,
 		reflect.String:
+		return true
+	case reflect.Uint8:
+		// There isn't a way to differentiate between a `string` and a type
+		// definition of a `[]byte`. So, we return true for a type definition
+		// of `[]byte` here, even though we treat `[]byte` as a scalar.
 		return true
 	// []string is just a slice of immutable []byte
 	case reflect.Slice:
@@ -169,8 +172,11 @@ func SlicePrimitiveTypeDefZeroValue(subject any) any {
 	// []string is just a slice of immutable []byte
 	case reflect.Slice:
 		et := et.Elem()
-		if et.Kind() == reflect.Uint8 {
-			return []string{}
+		if et.Kind() == reflect.Slice {
+			et := et.Elem()
+			if et.Kind() == reflect.Uint8 {
+				return []string{}
+			}
 		}
 		return nil
 	default:
@@ -198,38 +204,132 @@ func SlicePrimitiveTypeDefName(subject any) string {
 // If the subject is not a slice of primitive type definition or is itself nil,
 // returns nil.
 func SliceUnderlyingPrimitive(subject any) any {
-	if subject == nil || !IsSlicePrimitiveTypeDef(subject) {
+	// Special case for a type definition over []byte
+	if IsByteArrayTypeDef(subject) {
+		v := reflect.ValueOf(subject)
+		size := v.Len()
+		x := 0
+		out := make([]uint8, size)
+		for el := range v.Seq() {
+			out[x] = uint8(el.Int())
+			x++
+		}
+		return out
+	}
+	if !IsSlicePrimitiveTypeDef(subject) {
 		return nil
 	}
+
 	t := reflect.TypeOf(subject)
-	k := t.Kind()
+	et := t.Elem()
+	ek := et.Kind()
+
 	v := reflect.ValueOf(subject)
-	switch k {
+	size := v.Len()
+	x := 0
+	switch ek {
+	case reflect.Uint8:
+		// There isn't a way to differentiate between a type definition of a
+		// string and a type definition of a []byte. We return nil here to
+		// indicate that the supplied subject is not actually a slice of
+		// underlying primitive but rather a type definition of the []ybte
+		// primitive.
+		return nil
 	case reflect.Bool:
-		return v.Convert(reflect.TypeOf([]bool{})).Interface()
+		out := make([]bool, size)
+		for el := range v.Seq() {
+			out[x] = el.Bool()
+			x++
+		}
+		return out
 	case reflect.Int:
-		return v.Convert(reflect.TypeOf([]int{})).Interface()
+		out := make([]int, size)
+		for el := range v.Seq() {
+			out[x] = int(el.Int())
+			x++
+		}
+		return out
 	case reflect.Int8:
-		return v.Convert(reflect.TypeOf([]int8{})).Interface()
+		out := make([]int8, size)
+		for el := range v.Seq() {
+			out[x] = int8(el.Int())
+			x++
+		}
+		return out
 	case reflect.Int16:
-		return v.Convert(reflect.TypeOf([]int16{})).Interface()
+		out := make([]int16, size)
+		for el := range v.Seq() {
+			out[x] = int16(el.Int())
+			x++
+		}
+		return out
 	case reflect.Int32:
-		return v.Convert(reflect.TypeOf([]int32{})).Interface()
+		out := make([]int32, size)
+		for el := range v.Seq() {
+			out[x] = int32(el.Int())
+			x++
+		}
+		return out
 	case reflect.Int64:
-		return v.Convert(reflect.TypeOf([]int64{})).Interface()
+		out := make([]int64, size)
+		for el := range v.Seq() {
+			out[x] = el.Int()
+			x++
+		}
+		return out
+	case reflect.Uint:
+		out := make([]uint, size)
+		for el := range v.Seq() {
+			out[x] = uint(el.Int())
+			x++
+		}
+		return out
+	case reflect.Uint16:
+		out := make([]uint16, size)
+		for el := range v.Seq() {
+			out[x] = uint16(el.Int())
+			x++
+		}
+		return out
+	case reflect.Uint32:
+		out := make([]uint32, size)
+		for el := range v.Seq() {
+			out[x] = uint32(el.Int())
+			x++
+		}
+		return out
+	case reflect.Uint64:
+		out := make([]uint64, size)
+		for el := range v.Seq() {
+			out[x] = uint64(el.Int())
+			x++
+		}
+		return out
 	case reflect.Float32:
-		return v.Convert(reflect.TypeOf([]float32{})).Interface()
+		out := make([]float32, size)
+		for el := range v.Seq() {
+			out[x] = float32(el.Float())
+			x++
+		}
+		return out
 	case reflect.Float64:
-		return v.Convert(reflect.TypeOf([]float64{})).Interface()
+		out := make([]float64, size)
+		for el := range v.Seq() {
+			out[x] = el.Float()
+			x++
+		}
+		return out
 	case reflect.String:
-		return v.Convert(reflect.TypeOf([]string{})).Interface()
+		out := make([]string, size)
+		for el := range v.Seq() {
+			out[x] = el.String()
+			x++
+		}
+		return out
 	case reflect.Slice:
-		et := t.Elem()
+		et := et.Elem()
 		if et.Kind() == reflect.Uint8 {
-			size := et.Len()
 			out := make([]string, size)
-			v := reflect.ValueOf(et)
-			x := 0
 			for el := range v.Seq() {
 				out[x] = el.String()
 				x++
