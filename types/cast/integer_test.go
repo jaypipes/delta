@@ -119,8 +119,8 @@ func TestToSliceUint64(t *testing.T) {
 
 	// Special cases
 
-	// Even though this byte array is not probably not meant to be compared as
-	// a slice of uint64, it *is* castable directly to a []uint64.
+	// Even though this byte array is probably not meant to be compared as a
+	// slice of uint64, it *is* castable directly to a []uint64.
 	exp := []uint64{110, 111, 116, 32, 105, 110, 116}
 	got, ok := cast.ToSliceUint64([]byte("not int"))
 	assert.True(t, ok)
@@ -238,8 +238,8 @@ func TestToSliceInt64(t *testing.T) {
 
 	// Special cases
 
-	// Even though this byte array is not probably not meant to be compared as
-	// a slice of int64, it *is* castable directly to a []int64.
+	// Even though this byte array is probably not meant to be compared as a
+	// slice of int64, it *is* castable directly to a []int64.
 	exp := []int64{110, 111, 116, 32, 105, 110, 116}
 	got, ok := cast.ToSliceInt64([]byte("not int"))
 	assert.True(t, ok)
