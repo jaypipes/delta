@@ -89,6 +89,64 @@ func TestComparable_DefaultOptions(t *testing.T) {
 	})
 }
 
+// Calling Comparable with no options causes the two subject types to be
+// evaluated for comparability using conversion rules after the subjects have
+// had any type definitions resolved to their underlying primitive types.
+func ExampleComparable_default_options() {
+	var nilIface any
+	var notNilIface any = int(0)
+
+	type structType struct {
+		A int
+	}
+
+	type myIntType int32
+
+	comps := [][2]any{
+		{nil, 1},
+		{nilIface, nil},
+		{notNilIface, nil},
+		{structType{A: 42}, structType{A: 0}},
+		{func() {}, 1},
+		{0, int8(0)},
+		{int(0), uint(0)},
+		{"1", []byte("1")},
+		{myIntType(0), int(0)},
+		{[]string{"a", "b"}, [][]byte{[]byte("a"), []byte("b")}},
+		{map[string]string{"a": "b"}, 1},
+		{[]byte("1"), string("1")},
+		{string("1"), 1},
+		{string("1"), uint(1)},
+		{"0", myIntType(0)},
+	}
+	for _, pair := range comps {
+		a := pair[0]
+		b := pair[1]
+		fmt.Printf(
+			"Is %T comparable to %T? %t\n",
+			a, b,
+			cmp.Comparable(a, b),
+		)
+	}
+
+	// Output:
+	// Is <nil> comparable to int? true
+	// Is <nil> comparable to <nil>? true
+	// Is int comparable to <nil>? true
+	// Is cmp_test.structType comparable to cmp_test.structType? false
+	// Is func() comparable to int? false
+	// Is int comparable to int8? true
+	// Is int comparable to uint? true
+	// Is string comparable to []uint8? true
+	// Is cmp_test.myIntType comparable to int? true
+	// Is []string comparable to [][]uint8? true
+	// Is map[string]string comparable to int? false
+	// Is []uint8 comparable to string? true
+	// Is string comparable to int? true
+	// Is string comparable to uint? true
+	// Is string comparable to cmp_test.myIntType? true
+}
+
 func TestComparable_NoResolveTypeDef(t *testing.T) {
 	notComps := [][2]any{
 		// nil is not the same as a nil interface.
@@ -166,6 +224,65 @@ func TestComparable_NoResolveTypeDef(t *testing.T) {
 			)
 		}
 	})
+}
+
+// Calling Comparable with the [cmp.NoResolveTypeDef] option causes the two
+// subject types to be evaluated for comparability using conversion rules
+// however the subjects will NOT have had any type definitions resolved to
+// their underlying primitive types.
+func ExampleComparable_no_resolve_type_def() {
+	var nilIface any
+	var notNilIface any = int(0)
+
+	type structType struct {
+		A int
+	}
+
+	type myIntType int32
+
+	comps := [][2]any{
+		{nil, 1},
+		{nilIface, nil},
+		{notNilIface, nil},
+		{structType{A: 42}, structType{A: 0}},
+		{func() {}, 1},
+		{0, int8(0)},
+		{int(0), uint(0)},
+		{"1", []byte("1")},
+		{myIntType(0), int(0)},
+		{[]string{"a", "b"}, [][]byte{[]byte("a"), []byte("b")}},
+		{map[string]string{"a": "b"}, 1},
+		{[]byte("1"), string("1")},
+		{string("1"), 1},
+		{string("1"), uint(1)},
+		{"0", myIntType(0)},
+	}
+	for _, pair := range comps {
+		a := pair[0]
+		b := pair[1]
+		fmt.Printf(
+			"Is %T comparable to %T? %t\n",
+			a, b,
+			cmp.Comparable(a, b, cmp.NoResolveTypeDef),
+		)
+	}
+
+	// Output:
+	// Is <nil> comparable to int? true
+	// Is <nil> comparable to <nil>? true
+	// Is int comparable to <nil>? true
+	// Is cmp_test.structType comparable to cmp_test.structType? false
+	// Is func() comparable to int? false
+	// Is int comparable to int8? true
+	// Is int comparable to uint? true
+	// Is string comparable to []uint8? true
+	// Is cmp_test.myIntType comparable to int? false
+	// Is []string comparable to [][]uint8? true
+	// Is map[string]string comparable to int? false
+	// Is []uint8 comparable to string? true
+	// Is string comparable to int? true
+	// Is string comparable to uint? true
+	// Is string comparable to cmp_test.myIntType? false
 }
 
 func TestComparable_NoCast(t *testing.T) {
@@ -250,6 +367,67 @@ func TestComparable_NoCast(t *testing.T) {
 			)
 		}
 	})
+}
+
+// Calling Comparable with the [cmp.NoCast] option causes the two subject types
+// to be evaluated for comparability using strict type rules after the subjects
+// have had any type definitions resolved to their underlying primitive types.
+//
+// Strict type rules means the underlying primitive must be EXACTLY the same,
+// with one exception: a []byte is comparable to a string.
+func ExampleComparable_no_cast() {
+	var nilIface any
+	var notNilIface any = int(0)
+
+	type structType struct {
+		A int
+	}
+
+	type myIntType int32
+
+	comps := [][2]any{
+		{nil, 1},
+		{nilIface, nil},
+		{notNilIface, nil},
+		{structType{A: 42}, structType{A: 0}},
+		{func() {}, 1},
+		{0, int8(0)},
+		{int(0), uint(0)},
+		{"1", []byte("1")},
+		{myIntType(0), int(0)},
+		{[]string{"a", "b"}, [][]byte{[]byte("a"), []byte("b")}},
+		{map[string]string{"a": "b"}, 1},
+		{[]byte("1"), string("1")},
+		{string("1"), 1},
+		{string("1"), uint(1)},
+		{"0", myIntType(0)},
+	}
+	for _, pair := range comps {
+		a := pair[0]
+		b := pair[1]
+		fmt.Printf(
+			"Is %T comparable to %T? %t\n",
+			a, b,
+			cmp.Comparable(a, b, cmp.NoCast),
+		)
+	}
+
+	// Output:
+	// Is <nil> comparable to int? true
+	// Is <nil> comparable to <nil>? true
+	// Is int comparable to <nil>? true
+	// Is cmp_test.structType comparable to cmp_test.structType? false
+	// Is func() comparable to int? false
+	// Is int comparable to int8? false
+	// Is int comparable to uint? false
+	// Is string comparable to []uint8? true
+	// Is cmp_test.myIntType comparable to int? false
+	// Is []string comparable to [][]uint8? true
+	// Is map[string]string comparable to int? false
+	// Is []uint8 comparable to string? true
+	// Is string comparable to int? false
+	// Is string comparable to uint? false
+	// Is string comparable to cmp_test.myIntType? false
 }
 
 func TestComparable_NoConvert(t *testing.T) {
@@ -347,66 +525,37 @@ func TestComparable_NoConvert(t *testing.T) {
 	})
 }
 
-func ExampleComparable() {
+// Calling Comparable with the [cmp.NoConvert] option causes the two subject
+// types to be evaluated for comparability using type casting rules after
+// the subjects have had any type definitions resolved to their underlying
+// primitive types.
+func ExampleComparable_no_convert() {
+	var nilIface any
+	var notNilIface any = int(0)
+
+	type structType struct {
+		A int
+	}
+
+	type myIntType int32
+
 	comps := [][2]any{
 		{nil, 1},
-		{testtypes.NilInterface, nil},
-		{testtypes.MyStructType{}, nil},
+		{nilIface, nil},
+		{notNilIface, nil},
+		{structType{A: 42}, structType{A: 0}},
 		{func() {}, 1},
 		{0, int8(0)},
 		{int(0), uint(0)},
 		{"1", []byte("1")},
-		{testtypes.MyIntType(0), int(0)},
+		{myIntType(0), int(0)},
 		{[]string{"a", "b"}, [][]byte{[]byte("a"), []byte("b")}},
 		{map[string]string{"a": "b"}, 1},
 		{[]byte("1"), string("1")},
 		{string("1"), 1},
 		{string("1"), uint(1)},
-		{"0", testtypes.MyIntType(0)},
+		{"0", myIntType(0)},
 	}
-
-	fmt.Println("=================================")
-	fmt.Println("Using default compare options....")
-	fmt.Println("=================================")
-	for _, pair := range comps {
-		a := pair[0]
-		b := pair[1]
-		fmt.Printf(
-			"Is %T comparable to %T? %t\n",
-			a, b,
-			cmp.Comparable(a, b),
-		)
-	}
-
-	fmt.Println("=================================")
-	fmt.Println("Using NoResolveTypeDef ....")
-	fmt.Println("=================================")
-	for _, pair := range comps {
-		a := pair[0]
-		b := pair[1]
-		fmt.Printf(
-			"Is %T comparable to %T? %t\n",
-			a, b,
-			cmp.Comparable(a, b, cmp.NoResolveTypeDef),
-		)
-	}
-
-	fmt.Println("=================================")
-	fmt.Println("Using NoCast ....")
-	fmt.Println("=================================")
-	for _, pair := range comps {
-		a := pair[0]
-		b := pair[1]
-		fmt.Printf(
-			"Is %T comparable to %T? %t\n",
-			a, b,
-			cmp.Comparable(a, b, cmp.NoCast),
-		)
-	}
-
-	fmt.Println("=================================")
-	fmt.Println("Using NoConvert ....")
-	fmt.Println("=================================")
 	for _, pair := range comps {
 		a := pair[0]
 		b := pair[1]
@@ -418,72 +567,19 @@ func ExampleComparable() {
 	}
 
 	// Output:
-	// =================================
-	// Using default compare options....
-	// =================================
 	// Is <nil> comparable to int? true
-	// Is *types.MyStructType comparable to <nil>? true
-	// Is types.MyStructType comparable to <nil>? true
+	// Is <nil> comparable to <nil>? true
+	// Is int comparable to <nil>? true
+	// Is cmp_test.structType comparable to cmp_test.structType? false
 	// Is func() comparable to int? false
 	// Is int comparable to int8? true
 	// Is int comparable to uint? true
 	// Is string comparable to []uint8? true
-	// Is types.MyIntType comparable to int? true
-	// Is []string comparable to [][]uint8? true
-	// Is map[string]string comparable to int? false
-	// Is []uint8 comparable to string? true
-	// Is string comparable to int? true
-	// Is string comparable to uint? true
-	// Is string comparable to types.MyIntType? true
-	// =================================
-	// Using NoResolveTypeDef ....
-	// =================================
-	// Is <nil> comparable to int? true
-	// Is *types.MyStructType comparable to <nil>? true
-	// Is types.MyStructType comparable to <nil>? true
-	// Is func() comparable to int? false
-	// Is int comparable to int8? true
-	// Is int comparable to uint? true
-	// Is string comparable to []uint8? true
-	// Is types.MyIntType comparable to int? false
-	// Is []string comparable to [][]uint8? true
-	// Is map[string]string comparable to int? false
-	// Is []uint8 comparable to string? true
-	// Is string comparable to int? true
-	// Is string comparable to uint? true
-	// Is string comparable to types.MyIntType? false
-	// =================================
-	// Using NoCast ....
-	// =================================
-	// Is <nil> comparable to int? true
-	// Is *types.MyStructType comparable to <nil>? true
-	// Is types.MyStructType comparable to <nil>? true
-	// Is func() comparable to int? false
-	// Is int comparable to int8? false
-	// Is int comparable to uint? false
-	// Is string comparable to []uint8? true
-	// Is types.MyIntType comparable to int? true
+	// Is cmp_test.myIntType comparable to int? true
 	// Is []string comparable to [][]uint8? true
 	// Is map[string]string comparable to int? false
 	// Is []uint8 comparable to string? true
 	// Is string comparable to int? false
 	// Is string comparable to uint? false
-	// Is string comparable to types.MyIntType? false
-	// =================================
-	// Using NoConvert ....
-	// =================================
-	// Is <nil> comparable to int? true
-	// Is *types.MyStructType comparable to <nil>? true
-	// Is types.MyStructType comparable to <nil>? true
-	// Is func() comparable to int? false
-	// Is int comparable to int8? true
-	// Is int comparable to uint? true
-	// Is string comparable to []uint8? true
-	// Is types.MyIntType comparable to int? true
-	// Is []string comparable to [][]uint8? true
-	// Is map[string]string comparable to int? false
-	// Is []uint8 comparable to string? true
-	// Is string comparable to int? false
-	// Is string comparable to uint? false
-	// Is string comparable to types.MyIntType? false
+	// Is string comparable to cmp_test.myIntType? false
 }
