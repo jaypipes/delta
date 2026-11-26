@@ -111,3 +111,92 @@ func ExampleIsSliceScalar() {
 	// Is uint a slice of scalar? false
 	// Is uint8 a slice of scalar? false
 }
+
+func TestSliceUnderlyingPrimitive(t *testing.T) {
+	notSliceTypeDefPrimitives := []any{
+		testtypes.NilInterface,
+		testtypes.NotNilInterface,
+		struct{ a string }{a: "1"},
+		func() {},
+		nil,
+		map[string]string{"a": "a"},
+		[]testtypes.MyStructType{testtypes.MyStructType{}},
+		// slice of primitives is not a slice of type def primitives
+		[]string{"foo"},
+		[]int{0},
+		[]float64{0.0},
+	}
+	t.Run("not slices of type def primitives", func(t *testing.T) {
+		assert := assert.New(t)
+		for _, subject := range notSliceTypeDefPrimitives {
+			got := types.SliceUnderlyingPrimitive(subject)
+			assert.Nil(
+				got,
+				fmt.Sprintf(
+					"expected %v (%T) not to be a slice "+
+						"of type def primitives",
+					subject, subject,
+				),
+			)
+		}
+	})
+
+	sliceTypeDefPrimitives := [][2]any{
+		{
+			[]testtypes.MyIntType{testtypes.MyIntType(42)},
+			[]int{42},
+		},
+		{
+			[]testtypes.MyStringType{testtypes.MyStringType("foo")},
+			[]string{"foo"},
+		},
+		{
+			[]testtypes.MyFloat64Type{testtypes.MyFloat64Type(42.0)},
+			[]float64{42.0},
+		},
+		{
+			[]testtypes.MyFloat32Type{testtypes.MyFloat32Type(42.0)},
+			[]float32{42.0},
+		},
+		// A type def of a byte array resolves to a []uint8
+		{
+			testtypes.MyByteArrayType("foo"),
+			[]uint8{102, 111, 111},
+		},
+		// A type def of a slice of byte array resolves to a [][]uint8
+		{
+			[]testtypes.MyByteArrayType{testtypes.MyByteArrayType("foo")},
+			[][]uint8{[]uint8{102, 111, 111}},
+		},
+		{
+			testtypes.MySliceByteArrayType{[]byte("foo")},
+			[][]uint8{[]uint8{102, 111, 111}},
+		},
+		{
+			testtypes.MySliceTypeDefByteArrayType{testtypes.MyByteArrayType("foo")},
+			[][]uint8{[]uint8{102, 111, 111}},
+		},
+		// A type def over a slice of primitives resolves to a slice of the
+		// primitive
+		{
+			testtypes.MySliceIntType{42},
+			[]int{42},
+		},
+		// A type def over a slice of type def primitives resolves to a slice
+		// of the primitive.
+		{
+			testtypes.MySliceTypeDefIntType{testtypes.MyIntType(42)},
+			[]int{42},
+		},
+	}
+
+	t.Run("slices of scalars", func(t *testing.T) {
+		assert := assert.New(t)
+		for _, pair := range sliceTypeDefPrimitives {
+			subject := pair[0]
+			exp := pair[1]
+			got := types.SliceUnderlyingPrimitive(subject)
+			assert.Equal(exp, got)
+		}
+	})
+}

@@ -76,6 +76,7 @@ func TestEqual_DefaultOptions(t *testing.T) {
 			{testtypes.MyInt64Type(0), int64(0)},
 			{testtypes.MyStringType("0"), int64(0)},
 			{testtypes.MyByteArrayType("0"), int64(0)},
+			{[]string{"1"}, []testtypes.MyIntType{testtypes.MyIntType(1)}},
 		},
 	)
 

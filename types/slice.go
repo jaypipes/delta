@@ -203,16 +203,19 @@ func SlicePrimitiveTypeDefName(subject any) string {
 //
 // If the subject is not a slice of primitive type definition or is itself nil,
 // returns nil.
+//
+// Note that a type definition over `[]byte` is a slice, a scalar AND a type
+// definition. When calling this function with a type definitino over `[]byte`,
+// this function returns a `[]uint8`.
 func SliceUnderlyingPrimitive(subject any) any {
 	// Special case for a type definition over []byte
 	if IsByteArrayTypeDef(subject) {
 		v := reflect.ValueOf(subject)
 		size := v.Len()
-		x := 0
 		out := make([]uint8, size)
-		for el := range v.Seq() {
-			out[x] = uint8(el.Int())
-			x++
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
+			out[x] = uint8(el.Uint())
 		}
 		return out
 	}
@@ -226,113 +229,122 @@ func SliceUnderlyingPrimitive(subject any) any {
 
 	v := reflect.ValueOf(subject)
 	size := v.Len()
-	x := 0
 	switch ek {
 	case reflect.Uint8:
-		// There isn't a way to differentiate between a type definition of a
-		// string and a type definition of a []byte. We return nil here to
-		// indicate that the supplied subject is not actually a slice of
-		// underlying primitive but rather a type definition of the []ybte
-		// primitive.
-		return nil
+		// NOTE(jaypipes): It should not be possible to get here considering
+		// IsByteArrayTypeDef and !IsSlicePrimitiveTypeDef would cover the case
+		// of a type definition over `[]byte` or passing in `[]byte` directly.
+		panic("logic failure getting slice underlying primitive")
 	case reflect.Bool:
 		out := make([]bool, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = el.Bool()
-			x++
 		}
 		return out
 	case reflect.Int:
 		out := make([]int, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = int(el.Int())
-			x++
 		}
 		return out
 	case reflect.Int8:
 		out := make([]int8, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = int8(el.Int())
-			x++
 		}
 		return out
 	case reflect.Int16:
 		out := make([]int16, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = int16(el.Int())
-			x++
 		}
 		return out
 	case reflect.Int32:
 		out := make([]int32, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = int32(el.Int())
-			x++
 		}
 		return out
 	case reflect.Int64:
 		out := make([]int64, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = el.Int()
-			x++
 		}
 		return out
 	case reflect.Uint:
 		out := make([]uint, size)
-		for el := range v.Seq() {
-			out[x] = uint(el.Int())
-			x++
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
+			out[x] = uint(el.Uint())
 		}
 		return out
 	case reflect.Uint16:
 		out := make([]uint16, size)
-		for el := range v.Seq() {
-			out[x] = uint16(el.Int())
-			x++
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
+			out[x] = uint16(el.Uint())
 		}
 		return out
 	case reflect.Uint32:
 		out := make([]uint32, size)
-		for el := range v.Seq() {
-			out[x] = uint32(el.Int())
-			x++
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
+			out[x] = uint32(el.Uint())
 		}
 		return out
 	case reflect.Uint64:
 		out := make([]uint64, size)
-		for el := range v.Seq() {
-			out[x] = uint64(el.Int())
-			x++
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
+			out[x] = uint64(el.Uint())
 		}
 		return out
 	case reflect.Float32:
 		out := make([]float32, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = float32(el.Float())
-			x++
 		}
 		return out
 	case reflect.Float64:
 		out := make([]float64, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = el.Float()
-			x++
 		}
 		return out
 	case reflect.String:
 		out := make([]string, size)
-		for el := range v.Seq() {
+		for x := 0; x < size; x++ {
+			el := v.Index(x)
 			out[x] = el.String()
-			x++
 		}
 		return out
 	case reflect.Slice:
-		et := et.Elem()
+		et = et.Elem()
 		if et.Kind() == reflect.Uint8 {
-			out := make([]string, size)
-			for el := range v.Seq() {
-				out[x] = el.String()
-				x++
+			out := make([][]uint8, size)
+			for x := 0; x < size; x++ {
+				el := v.Index(x)
+				if IsByteArrayTypeDef(el.Interface()) {
+					// The element is type definition over a `[]byte`, so
+					// convert the type def to a `[]uint8`.
+					elBA := SliceUnderlyingPrimitive(el.Interface())
+					if elBA == nil {
+						return nil
+					}
+					out[x] = elBA.([]uint8)
+				} else {
+					// Not a type definition over `[]byte`. the element is a
+					// `[]byte` itself, so just type cast.
+					out[x] = el.Interface().([]uint8)
+				}
 			}
 			return out
 		}
