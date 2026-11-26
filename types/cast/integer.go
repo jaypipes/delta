@@ -1,11 +1,7 @@
 package cast
 
 // ToUint64 takes an interface and returns the underlying value as a uint64
-// along with a bool indicating whether the type cast conversion was
-// safe/possible.
-//
-// If the supplied interface is not an Integer or Float type, returns
-// uint64(0).
+// along with a bool indicating whether the type cast was safe/possible.
 func ToUint64(v any) (uint64, bool) {
 	switch v := v.(type) {
 	case uint64:
@@ -37,10 +33,8 @@ func ToUint64(v any) (uint64, bool) {
 }
 
 // ToSliceUint64 takes an interface and returns the underlying value as a
-// []uint64 along with a bool indicating whether the type cast conversion was
+// []uint64 along with a bool indicating whether the type cast was
 // safe/possible.
-//
-// If the supplied inteface is not a slice of Integers, returns nil, false.
 func ToSliceUint64(subject any) ([]uint64, bool) {
 	switch subject := subject.(type) {
 	case []uint64:
@@ -56,7 +50,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []int8:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -64,7 +57,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []int16:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -72,7 +64,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []int32:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -80,7 +71,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []int64:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -88,7 +78,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []uint:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -96,7 +85,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []uint8:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -104,7 +92,6 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []uint16:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -112,7 +99,21 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 	case []uint32:
 		out := make([]uint64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
+			i, _ := ToUint64(el)
+			out[x] = i
+		}
+		return out, true
+	case []float32:
+		out := make([]uint64, len(subject))
+		for x, el := range subject {
+			// Float types never error when type casting to uint64 or int64.
+			i, _ := ToUint64(el)
+			out[x] = i
+		}
+		return out, true
+	case []float64:
+		out := make([]uint64, len(subject))
+		for x, el := range subject {
 			i, _ := ToUint64(el)
 			out[x] = i
 		}
@@ -123,11 +124,7 @@ func ToSliceUint64(subject any) ([]uint64, bool) {
 }
 
 // ToInt64 takes an interface and returns the underlying value as an int64
-// along with a bool indicating whether the type cast conversion was
-// safe/possible.
-//
-// If the supplied interface is not an Integer or Float type, returns
-// int64(0).
+// along with a bool indicating whether the type cast was safe/possible.
 func ToInt64(v any) (int64, bool) {
 	switch v := v.(type) {
 	case int64:
@@ -159,10 +156,8 @@ func ToInt64(v any) (int64, bool) {
 }
 
 // ToSliceInt64 takes an interface and returns the underlying value as a
-// []int64 along with a bool indicating whether the type cast conversion was
+// []int64 along with a bool indicating whether the type cast was
 // safe/possible.
-//
-// If the supplied inteface is not a slice of Integers, returns nil, false.
 func ToSliceInt64(subject any) ([]int64, bool) {
 	switch subject := subject.(type) {
 	case []int64:
@@ -178,7 +173,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []int8:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -186,7 +180,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []int16:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -194,7 +187,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []int32:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -202,7 +194,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []uint64:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to int64 or uint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -210,7 +201,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []uint:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -218,7 +208,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []uint8:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -226,7 +215,6 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []uint16:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
 			i, _ := ToInt64(el)
 			out[x] = i
 		}
@@ -234,7 +222,21 @@ func ToSliceInt64(subject any) ([]int64, bool) {
 	case []uint32:
 		out := make([]int64, len(subject))
 		for x, el := range subject {
-			// Integer types never error when type casting to uint64 or uuint64.
+			i, _ := ToInt64(el)
+			out[x] = i
+		}
+		return out, true
+	case []float32:
+		out := make([]int64, len(subject))
+		for x, el := range subject {
+			// Float  types never error when type casting to int64 or uint64.
+			i, _ := ToInt64(el)
+			out[x] = i
+		}
+		return out, true
+	case []float64:
+		out := make([]int64, len(subject))
+		for x, el := range subject {
 			i, _ := ToInt64(el)
 			out[x] = i
 		}

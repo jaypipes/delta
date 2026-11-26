@@ -3,7 +3,7 @@ package convert
 import (
 	"strconv"
 
-	"github.com/jaypipes/delta/cast"
+	"github.com/jaypipes/delta/types/cast"
 )
 
 // ToString takes an interface and returns the underlying value as a string

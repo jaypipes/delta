@@ -3,9 +3,9 @@ package cmp
 import (
 	"slices"
 
-	"github.com/jaypipes/delta/cast"
-	"github.com/jaypipes/delta/convert"
 	"github.com/jaypipes/delta/types"
+	"github.com/jaypipes/delta/types/cast"
+	"github.com/jaypipes/delta/types/convert"
 )
 
 // comparableSlices returns true if the two supplied slices are comparable per

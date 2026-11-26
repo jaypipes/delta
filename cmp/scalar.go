@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/jaypipes/delta/cast"
-	"github.com/jaypipes/delta/convert"
 	"github.com/jaypipes/delta/types"
+	"github.com/jaypipes/delta/types/cast"
+	"github.com/jaypipes/delta/types/convert"
 )
 
 // comparableScalars returns true if the two supplied scalars are comparable
