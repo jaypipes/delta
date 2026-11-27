@@ -2,6 +2,7 @@ package cmp
 
 import (
 	"bytes"
+	gocmp "cmp"
 	"strconv"
 
 	"github.com/jaypipes/delta/types"
@@ -232,8 +233,332 @@ func comparablePrimitivesCast(a any, b any) bool {
 // the supplied Options, -1 if the value of a is less than b and 1 if the value
 // of a is greater than b.
 func compareScalars(a any, b any, opts Options) int {
-	//  TODO
-	return -1
+	aIsPrim := types.IsPrimitive(a)
+	bIsPrim := types.IsPrimitive(b)
+
+	if aIsPrim && bIsPrim {
+		return comparePrimitives(a, b, opts)
+	}
+
+	// At least one of the scalars is a type definition over a primitive, so
+	// resolve the type definition to its underlying primitive and compare the
+	// resolved primitives.
+
+	if opts.NoResolveTypeDef {
+		return -1
+	}
+
+	ap := a
+	if types.IsPrimitiveTypeDef(a) {
+		ap = types.UnderlyingPrimitive(a)
+	}
+
+	bp := b
+	if types.IsPrimitiveTypeDef(b) {
+		bp = types.UnderlyingPrimitive(b)
+	}
+	return comparePrimitives(ap, bp, opts)
+}
+
+// comparePrimitives returns 0 if the value of the supplied primitives are
+// equal per the supplied Options, -1 if the value of a is less than b and 1 if
+// the value of a is greater than b.
+func comparePrimitives(a any, b any, opts Options) int {
+	switch {
+	case opts.NoCast:
+		return comparePrimitivesNoCast(a, b)
+	case opts.NoConvert:
+		return comparePrimitivesCast(a, b)
+	default:
+		return comparePrimitivesConvert(a, b, opts)
+	}
+}
+
+// comparePrimitivesNoCast returns 0 if the value of the supplied primitives
+// are equal per the supplied Options, -1 if the value of a is less than b and
+// 1 if the value of a is greater than b. No type casting up to the largest
+// size of the underlying type is done.
+func comparePrimitivesNoCast(a any, b any) int {
+	switch a := a.(type) {
+	case int:
+		switch b := b.(type) {
+		case int:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case int8:
+		switch b := b.(type) {
+		case int8:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case int16:
+		switch b := b.(type) {
+		case int16:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case int32:
+		switch b := b.(type) {
+		// Note that rune is a type alias for int32
+		case int32:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case int64:
+		switch b := b.(type) {
+		case int64:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case uint:
+		switch b := b.(type) {
+		case uint:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case uint8:
+		switch b := b.(type) {
+		// Note that byte is a type alias for uint8
+		case uint8:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case uint16:
+		switch b := b.(type) {
+		case uint16:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case uint32:
+		switch b := b.(type) {
+		case uint32:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case uint64:
+		switch b := b.(type) {
+		case uint64:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case string:
+		switch b := b.(type) {
+		case string:
+			return gocmp.Compare(a, b)
+		// string is just an immutable []byte
+		case []byte:
+			return gocmp.Compare(a, string(b))
+		default:
+			return -1
+		}
+	case []byte:
+		switch b := b.(type) {
+		case []byte:
+			return gocmp.Compare(string(a), string(b))
+		// string is just an immutable []byte
+		case string:
+			return gocmp.Compare(string(a), b)
+		default:
+			return -1
+		}
+	case float32:
+		switch b := b.(type) {
+		case float32:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case float64:
+		switch b := b.(type) {
+		case float64:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	default:
+		return -1
+	}
+}
+
+// comparePrimitivesCast returns 0 if the two supplied primitives are equal
+// with type casting to the greatest size of the underlying Go type, -1 if the
+// value of a is less than b and 1 if the value of a is greater than b.
+func comparePrimitivesCast(a any, b any) int {
+	switch a := a.(type) {
+	case int, int8, int16, int32, int64:
+		switch b := b.(type) {
+		case int, int8, int16, int32, int64:
+			ai, _ := cast.ToInt64(a)
+			bi, _ := cast.ToInt64(b)
+			return gocmp.Compare(ai, bi)
+		case uint, uint8, uint16, uint32, uint64:
+			ai, _ := cast.ToInt64(a)
+			bi, _ := cast.ToInt64(b)
+			return gocmp.Compare(ai, bi)
+		default:
+			return -1
+		}
+	case uint, uint8, uint16, uint32, uint64:
+		switch b := b.(type) {
+		case int, int8, int16, int32, int64:
+			au, _ := cast.ToUint64(a)
+			bu, _ := cast.ToUint64(b)
+			return gocmp.Compare(au, bu)
+		case uint, uint8, uint16, uint32, uint64:
+			au, _ := cast.ToUint64(a)
+			bu, _ := cast.ToUint64(b)
+			return gocmp.Compare(au, bu)
+		default:
+			return -1
+		}
+	case float32:
+		switch b := b.(type) {
+		case float32:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case float64:
+		switch b := b.(type) {
+		case float64:
+			return gocmp.Compare(a, b)
+		default:
+			return -1
+		}
+	case string:
+		switch b := b.(type) {
+		case string:
+			return gocmp.Compare(a, b)
+		case []byte:
+			return gocmp.Compare(a, string(b))
+		default:
+			return -1
+		}
+	case []byte:
+		switch b := b.(type) {
+		case string:
+			return gocmp.Compare(string(a), b)
+		case []byte:
+			return gocmp.Compare(string(a), string(b))
+		default:
+			return -1
+		}
+	default:
+		return -1
+	}
+}
+
+// comparePrimitivesConvert returns 0 if the two supplied primitives are equal
+// with type conversion, -1 if the value of a is less than b and 1 if the value
+// of a is greater than b.
+func comparePrimitivesConvert(a any, b any, opts Options) int {
+	switch a := a.(type) {
+	case int, int8, int16, int32, int64:
+		ai, _ := cast.ToInt64(a)
+		switch b := b.(type) {
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
+			bi, _ := cast.ToInt64(b)
+			return gocmp.Compare(ai, bi)
+		case string, []byte:
+			bs, _ := cast.ToString(b)
+			bi, err := strconv.Atoi(bs)
+			if err != nil {
+				return -1
+			}
+			return gocmp.Compare(ai, int64(bi))
+		default:
+			return -1
+		}
+	case uint, uint8, uint16, uint32, uint64:
+		au, _ := cast.ToUint64(a)
+		switch b := b.(type) {
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
+			bu, _ := cast.ToUint64(b)
+			return gocmp.Compare(au, bu)
+		case string, []byte:
+			bs, _ := cast.ToString(b)
+			bu, err := strconv.Atoi(bs)
+			if err != nil {
+				return -1
+			}
+			return gocmp.Compare(au, uint64(bu))
+		default:
+			return -1
+		}
+	case float32, float64:
+		af, _ := cast.ToFloat64(a)
+		switch b := b.(type) {
+		case float32, float64:
+			bf, _ := cast.ToFloat64(b)
+			return gocmp.Compare(af, bf)
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64:
+			bf, _ := cast.ToFloat64(b)
+			return gocmp.Compare(af, bf)
+		case string, []byte:
+			// String and Float ScalarTypes are equivalent comparable. When
+			// comparing String and Float scalars, [Equivalent] determines the
+			// number of decimal places in the String scalar and uses
+			// [fmt.Sprintf] to create a `string` from the underlying `float`
+			// value and then compares the resulting strings to each other.
+			bs, _ := cast.ToString(b)
+			places, err := convert.DecimalPlacesInFloatString(bs)
+			if err != nil {
+				return -1
+			}
+			as := convert.ToFloatString(af, places)
+			return gocmp.Compare(as, bs)
+		default:
+			return -1
+		}
+	case string, []byte:
+		as, _ := cast.ToString(a)
+		switch b := b.(type) {
+		case string, []byte:
+			bs, _ := cast.ToString(b)
+			return gocmp.Compare(as, bs)
+		case
+			int, int8, int16, int32, int64:
+			bi, _ := cast.ToInt64(b)
+			bs := strconv.Itoa(int(bi))
+			return gocmp.Compare(as, bs)
+		case
+			uint, uint8, uint16, uint32, uint64:
+			bu, _ := cast.ToUint64(b)
+			bs := strconv.Itoa(int(bu))
+			return gocmp.Compare(as, bs)
+		case float32, float64:
+			bf, _ := cast.ToFloat64(b)
+			places, err := convert.DecimalPlacesInFloatString(as)
+			if err != nil {
+				return -1
+			}
+			bs := convert.ToFloatString(bf, places)
+			return gocmp.Compare(as, bs)
+		default:
+			return -1
+		}
+	default:
+		return -1
+	}
 }
 
 // equalScalars returns true if the two supplied scalars are equal
