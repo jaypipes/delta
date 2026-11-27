@@ -9,47 +9,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDiff_SliceScalar_NoCast(t *testing.T) {
+func TestDiff_SliceScalar(t *testing.T) {
 	cases := []struct {
-		name   string
-		a      any
-		b      any
-		exp    diff.Delta
-		expErr string
+		name string
+		a    any
+		b    any
+		opts []cmp.Option
+		exp  diff.Delta
 	}{
 		{
-			"empty slices",
-			[]string{},
-			[]string{},
-			diff.Delta{},
-			"",
+			name: "empty slices",
+			a:    []string{},
+			b:    []string{},
+			exp:  diff.Delta{},
 		},
 		{
-			"primitives same values different type",
-			[]string{"a"},
-			[]any{"a"},
-			diff.Delta{},
-			"invalid type comparison",
+			name: "primitives same values different type",
+			a:    []string{"a"},
+			b:    []any{"a"},
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceType,
+					From:      []string{"a"},
+					To:        []any{"a"},
+				},
+			},
 		},
 		{
-			"primitives different values different type",
-			[]string{"a"},
-			[]any{"b"},
-			diff.Delta{},
-			"invalid type comparison",
+			name: "primitives different values different type NoCast",
+			a:    []string{"a"},
+			b:    []any{"b"},
+			opts: []cmp.Option{cmp.NoCast},
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceType,
+					From:      []string{"a"},
+					To:        []any{"b"},
+				},
+			},
 		},
 		{
-			"primitives same type and value",
-			[]string{"a"},
-			[]string{"a"},
-			diff.Delta{},
-			"",
+			name: "primitives same type and value",
+			a:    []string{"a"},
+			b:    []string{"a"},
+			exp:  diff.Delta{},
 		},
 		{
-			"primitives same type different values",
-			[]string{"a"},
-			[]string{"b"},
-			diff.Delta{
+			name: "primitives same type different values",
+			a:    []string{"a"},
+			b:    []string{"b"},
+			exp: diff.Delta{
 				{
 					FieldPath: fieldpath.FromString(""),
 					Kind:      diff.DifferenceModify,
@@ -62,13 +73,12 @@ func TestDiff_SliceScalar_NoCast(t *testing.T) {
 					},
 				},
 			},
-			"",
 		},
 		{
-			"slices same elements different order",
-			[]string{"a", "b"},
-			[]string{"b", "a"},
-			diff.Delta{
+			name: "slices same elements different order",
+			a:    []string{"a", "b"},
+			b:    []string{"b", "a"},
+			exp: diff.Delta{
 				{
 					FieldPath: fieldpath.FromString(""),
 					Kind:      diff.DifferenceSort,
@@ -79,20 +89,79 @@ func TestDiff_SliceScalar_NoCast(t *testing.T) {
 					},
 				},
 			},
-			"",
+		},
+		{
+			name: "[]string and [][]byte considered slices",
+			a:    []string{"a"},
+			b:    [][]byte{[]byte("b")},
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceModify,
+					From:      []string{"a"},
+					To:        [][]byte{[]byte("b")},
+					Slice: &diff.SliceDifference{
+						Sort:    false,
+						ANotInB: []any{"a"},
+						BNotInA: []any{"b"},
+					},
+				},
+			},
+		},
+		{
+			name: "[]string and [][]byte considered slices, diff order only",
+			a:    []string{"a", "b"},
+			b:    [][]byte{[]byte("b"), []byte("a")},
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceSort,
+					From:      []string{"a", "b"},
+					To:        [][]byte{[]byte("b"), []byte("a")},
+					Slice: &diff.SliceDifference{
+						Sort: true,
+					},
+				},
+			},
+		},
+		{
+			name: "[]string and []byte are NOT comparable when using NoCast",
+			a:    []string{"a"},
+			b:    []byte("a"),
+			opts: []cmp.Option{cmp.NoCast},
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceType,
+					From:      []string{"a"},
+					To:        []byte("a"),
+				},
+			},
+		},
+		{
+			name: "[]string and []byte ARE comparable with no options",
+			a:    []string{"a"},
+			b:    []byte("a"),
+			exp: diff.Delta{
+				{
+					FieldPath: fieldpath.FromString(""),
+					Kind:      diff.DifferenceModify,
+					From:      []string{"a"},
+					To:        []byte("a"),
+					Slice: &diff.SliceDifference{
+						Sort:    false,
+						ANotInB: []any{"a"},
+						BNotInA: []any{"97"},
+					},
+				},
+			},
 		},
 	}
+	require := require.New(t)
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			require := require.New(t)
-			d, err := diff.Diff(c.a, c.b, cmp.NoCast)
-			if c.expErr != "" {
-				require.ErrorContains(err, c.expErr)
-			} else {
-				require.Nil(err)
-				require.NotNil(d)
-				require.Equal(c.exp, d)
-			}
-		})
+		d, err := diff.Diff(c.a, c.b, c.opts...)
+		require.Nil(err)
+		require.NotNil(d)
+		require.Equal(c.exp, d)
 	}
 }

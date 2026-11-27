@@ -188,11 +188,9 @@ func TestDelta_DifferentAt(t *testing.T) {
 			true,
 		},
 	}
+	require := require.New(t)
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			require := require.New(t)
-			require.Equal(c.exp, c.subject.DifferentAt(c.path))
-		})
+		require.Equal(c.exp, c.subject.DifferentAt(c.path))
 	}
 }
 
@@ -272,11 +270,9 @@ func TestDelta_DifferentExcept(t *testing.T) {
 			true, // because there are differences
 		},
 	}
+	require := require.New(t)
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			require := require.New(t)
-			require.Equal(c.exp, c.subject.DifferentExcept(c.paths...))
-		})
+		require.Equal(c.exp, c.subject.DifferentExcept(c.paths...))
 	}
 }
 
@@ -338,11 +334,9 @@ func TestDelta_DifferencesExcept(t *testing.T) {
 			},
 		},
 	}
+	require := require.New(t)
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			require := require.New(t)
-			require.Equal(c.exp, c.subject.DifferencesExcept(c.paths...))
-		})
+		require.Equal(c.exp, c.subject.DifferencesExcept(c.paths...))
 	}
 }
 

@@ -9,6 +9,12 @@ import (
 // CollectAt recursively adds any detected differences in the supplied values
 // to the Delta, adding a nested field path for each level of nested map or
 // struct values examined.
+//
+// The supplied subject values represent the contents of a field at the
+// supplied field path. Therefore, if a is nil and b is not nil, that indicates
+// the kind of difference is additive. If a is not nil and b is nil, the kind
+// of difference is subtractive. If both a and b is not nil, any difference
+// kind is mutative.
 func (d *Delta) CollectAt(
 	fp fieldpath.FieldPath,
 	a any,
@@ -72,30 +78,12 @@ func (d *Delta) CollectAt(
 	bIsScalar := types.IsScalar(b)
 
 	if aIsScalar && bIsScalar {
-		eq, ok := cmp.EqualComparable(a, b, opts...)
-		if !ok {
-			return cmp.InvalidTypeComparison(a, b)
-		} else if eq {
+		if cmp.Equal(a, b, opts...) {
 			return nil
 		}
 		d.Push(
 			Difference{
 				Kind:      DifferenceModify,
-				FieldPath: fp,
-				From:      a,
-				To:        b,
-			},
-		)
-		return nil
-	}
-
-	if aIsScalar || bIsScalar {
-		// We already handled the case when both subjects are scalars, so if
-		// either is a scalar, that represents a case where the field's
-		// underlying data type changed...
-		d.Push(
-			Difference{
-				Kind:      DifferenceType,
 				FieldPath: fp,
 				From:      a,
 				To:        b,
@@ -117,18 +105,8 @@ func (d *Delta) CollectAt(
 	}
 
 	if aIsSlice || bIsSlice {
-		// We already handled the case when both subjects are slices, so if
-		// either is a slice, that represents a case where the field's
-		// underlying data type changed...
-		d.Push(
-			Difference{
-				Kind:      DifferenceType,
-				FieldPath: fp,
-				From:      a,
-				To:        b,
-			},
-		)
-		return nil
+		// We cannot compare a slice to a non-slice
+		return cmp.InvalidTypeComparison(a, b)
 	}
 
 	return d.collectRecordDifferences(fp, a, b, o)
