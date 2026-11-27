@@ -47,14 +47,33 @@ func TypeOf(subject any) Type {
 	}
 }
 
-// Convertible returns true if the supplied subjects are convertible to each
-// other.
+// Convertible returns true if the supplied subjects are convertible to a type
+// that can be compared.
 func Convertible(a any, b any) bool {
-	if types.IsScalar(a) {
-		return types.IsScalar(b)
-	}
-	if types.IsSliceScalar(a) {
+	// NOTE(jaypipes): A `[]byte` is BOTH a scalar and a slice type so we need
+	// to handle them specially.
+	aIsBA := types.IsByteArray(a)
+	bIsBA := types.IsByteArray(b)
+	aIsScalar := types.IsScalar(a)
+	bIsScalar := types.IsScalar(b)
+	aIsSlice := types.IsSlice(a)
+	bIsSlice := types.IsSlice(b)
+	switch {
+	case aIsScalar && bIsScalar:
+		return true
+	case aIsBA && bIsBA:
+		return true
+	case aIsBA && bIsScalar:
+		return true
+	case bIsBA && aIsScalar:
+		return true
+	case aIsBA && bIsSlice:
 		return types.IsSliceScalar(b)
+	case bIsBA && aIsSlice:
+		return types.IsSliceScalar(a)
+	case aIsSlice && bIsSlice:
+		return types.IsSliceScalar(a) && types.IsSliceScalar(b)
+	default:
+		return false
 	}
-	return false
 }

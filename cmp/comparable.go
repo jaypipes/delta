@@ -7,12 +7,9 @@ import (
 // Comparable returns true if the two supplied things are comparable according
 // to any supplied options.
 func Comparable(a any, b any, opts ...Option) bool {
-	ac := types.CategoryOf(a)
-	bc := types.CategoryOf(b)
-
 	// We compare nils specially, so if either argument is nil, the pair is
 	// comparable.
-	if ac == types.Nil || bc == types.Nil {
+	if a == nil || b == nil {
 		return true
 	}
 
@@ -24,28 +21,15 @@ func Comparable(a any, b any, opts ...Option) bool {
 	aIsScalar := types.IsScalar(a)
 	bIsScalar := types.IsScalar(b)
 
-	// Both `string` and `MyByteArrayType` are scalars.  However, `string`
-	// is not a slice, but `MyByteArrayType` *is* a slice.
-	//
-	// Here, we check to see if we are comparing a `[]string` (or
-	// `[]MyByteArrayType`) with a `MyByteArrayType` and return false if
-	// so.
-	aIsBATD := types.IsByteArrayTypeDef(a)
-	bIsBATD := types.IsByteArrayTypeDef(b)
+	aIsSlice := types.IsSlice(a)
+	bIsSlice := types.IsSlice(b)
+
+	// NOTE(jaypipes): A `[]byte` is BOTH a scalar and a slice type.
 
 	switch {
 	case aIsScalar && bIsScalar:
 		return comparableScalars(a, b, o)
-	case aIsScalar && bIsBATD:
-		return comparableScalars(a, b, o)
-	case bIsScalar && aIsBATD:
-		return comparableScalars(a, b, o)
-	}
-
-	aIsSlice := types.IsSlice(a)
-	bIsSlice := types.IsSlice(b)
-
-	if aIsSlice && bIsSlice {
+	case aIsSlice && bIsSlice:
 		return comparableSlices(a, b, o)
 	}
 

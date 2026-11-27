@@ -10,6 +10,244 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestComparable_Invariants(t *testing.T) {
+	f := func() {}
+	c := make(chan struct{}, 1)
+	notComparable := [][2]any{
+		// func and channel types are not comparable and supplying even the
+		// exact same func or channel as both arguments to Comparable will
+		// return false.
+		{f, 1},
+		{f, f},
+		{c, 1},
+		{c, c},
+	}
+	t.Run("not comparable", func(t *testing.T) {
+		assert := assert.New(t)
+		for _, pair := range notComparable {
+			a := pair[0]
+			b := pair[1]
+			assert.False(
+				cmp.Comparable(a, b),
+				fmt.Sprintf(
+					"[default options] expected %v (%T) "+
+						"and %v (%T) not to be comparable",
+					a, a, b, b,
+				),
+			)
+			// Comparable is transitive, so reverse the argument order and verify
+			// same result.
+			assert.False(
+				cmp.Comparable(b, a),
+				fmt.Sprintf(
+					"[default options] expected %v (%T) "+
+						"and %v (%T) not to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.False(
+				cmp.Comparable(a, b, cmp.NoResolveTypeDef),
+				fmt.Sprintf(
+					"[no resolve type def] expected %v (%T) "+
+						"and %v (%T) not to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.False(
+				cmp.Comparable(b, a, cmp.NoResolveTypeDef),
+				fmt.Sprintf(
+					"[no resolve type def] expected %v (%T) and "+
+						"%v (%T) not to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.False(
+				cmp.Comparable(a, b, cmp.NoCast),
+				fmt.Sprintf(
+					"[no cast] expected %v (%T) "+
+						"and %v (%T) not to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.False(
+				cmp.Comparable(b, a, cmp.NoCast),
+				fmt.Sprintf(
+					"[no cast] expected %v (%T) and "+
+						"%v (%T) not to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.False(
+				cmp.Comparable(a, b, cmp.NoConvert),
+				fmt.Sprintf(
+					"[no convert] expected %v (%T) "+
+						"and %v (%T) not to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.False(
+				cmp.Comparable(b, a, cmp.NoConvert),
+				fmt.Sprintf(
+					"[no convert] expected %v (%T) and "+
+						"%v (%T) not to be comparable",
+					b, b, a, a,
+				),
+			)
+		}
+	})
+
+	comparables := [][2]any{
+		// if either a or b is `nil`, Comparable always returns false
+		{nil, nil},
+		{nil, 1},
+	}
+
+	t.Run("comparable", func(t *testing.T) {
+		assert := assert.New(t)
+		for _, pair := range comparables {
+			a := pair[0]
+			b := pair[1]
+			assert.True(
+				cmp.Comparable(a, b),
+				fmt.Sprintf(
+					"[default options] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.True(
+				cmp.Comparable(b, a),
+				fmt.Sprintf(
+					"[default options] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.True(
+				cmp.Comparable(a, b, cmp.NoResolveTypeDef),
+				fmt.Sprintf(
+					"[no resolve type def] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.True(
+				cmp.Comparable(b, a, cmp.NoResolveTypeDef),
+				fmt.Sprintf(
+					"[no resolve type def] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.True(
+				cmp.Comparable(a, b, cmp.NoCast),
+				fmt.Sprintf(
+					"[no cast] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.True(
+				cmp.Comparable(b, a, cmp.NoCast),
+				fmt.Sprintf(
+					"[no cast] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					b, b, a, a,
+				),
+			)
+			assert.True(
+				cmp.Comparable(a, b, cmp.NoConvert),
+				fmt.Sprintf(
+					"[no convert] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					a, a, b, b,
+				),
+			)
+			assert.True(
+				cmp.Comparable(b, a, cmp.NoConvert),
+				fmt.Sprintf(
+					"[no convert] expected %v (%T) and "+
+						"%v (%T) to be comparable",
+					b, b, a, a,
+				),
+			)
+		}
+	})
+}
+
+// There are certain invariants when calling Comparable regardless of what
+// options you supply to Comparable that these examples illustrate.
+func ExampleComparable_invariants() {
+	type myInterfaceType interface {
+		F()
+	}
+
+	type myStructType struct {
+		myInterfaceType
+		A int
+	}
+
+	var nilInterface myInterfaceType = (*myStructType)(nil)
+
+	// nil is always comparable to nil
+	fmt.Printf(
+		"Is <nil> comparable to <nil>? %t\n",
+		cmp.Comparable(nil, nil),
+	)
+	// if either of the subjects is nil, Comparable returns true.
+	fmt.Printf(
+		"Is <nil> comparable to 1? %t\n",
+		cmp.Comparable(nil, 1),
+	)
+	// An interface that references a nil is NOT the same as nil.
+	fmt.Printf(
+		"Is int(0) comparable to an interface that references a nil pointer? %t\n",
+		cmp.Comparable(int(0), nilInterface),
+	)
+	// A scalar type is never comparable to a slice type
+	fmt.Printf(
+		"Is int(0) comparable to a slice of int(0)? %t\n",
+		cmp.Comparable(int(0), []int{int(0)}),
+	)
+	// With one exception: a []byte is considered BOTH a scalar and a slice. A
+	// []byte is comparable to a scalar and comparable to a slice of integer
+	// primitives.
+	fmt.Printf(
+		"Is []byte comparable to a string? %t\n",
+		cmp.Comparable([]byte("foo"), "foo"),
+	)
+	fmt.Printf(
+		"Is []byte comparable to a slice of int64? %t\n",
+		cmp.Comparable([]byte("foo"), []int64{100, 111, 111}),
+	)
+
+	f := func() {}
+
+	// Functions and channels are never comparable.
+	fmt.Printf(
+		"Is a func comparable to the exact same func? %t\n",
+		cmp.Comparable(f, f),
+	)
+
+	c := make(chan struct{}, 1)
+
+	// Functions and channels are never comparable.
+	fmt.Printf(
+		"Is a channel comparable to the exact same channel? %t\n",
+		cmp.Comparable(c, c),
+	)
+
+	// Output:
+	// Is <nil> comparable to <nil>? true
+	// Is <nil> comparable to 1? true
+	// Is int(0) comparable to an interface that references a nil pointer? false
+	// Is int(0) comparable to a slice of int(0)? false
+	// Is []byte comparable to a string? true
+	// Is []byte comparable to a slice of int64? true
+	// Is a func comparable to the exact same func? false
+	// Is a channel comparable to the exact same channel? false
+}
+
 func TestComparable_DefaultOptions(t *testing.T) {
 	notComps := [][2]any{
 		// nil is not the same as a nil interface.
