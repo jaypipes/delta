@@ -259,6 +259,20 @@ func TestEqual_TypeDefinitions(t *testing.T) {
 	assert.False(cmp.Equal(itd, uitd, cmp.NoCast))
 	// If we can't resolve the type definitions, we cannot compare...
 	assert.False(cmp.Equal(itd, uitd, cmp.NoResolveTypeDef))
+
+	// Byte arrays are special since they are both scalars and slices.
+	batd := testtypes.MyByteArrayType("foo")
+	ba := []byte("foo")
+	std := testtypes.MyStringType("foo")
+	s := "foo"
+
+	assert.True(cmp.Equal(batd, ba))
+	// And they are compared as strings even when using no cast.
+	assert.True(cmp.Equal(batd, s, cmp.NoCast))
+	assert.True(cmp.Equal(batd, std, cmp.NoCast))
+	// If we can't resolve the type definitions, we canot compare...
+	assert.False(cmp.Equal(batd, s, cmp.NoResolveTypeDef))
+	assert.False(cmp.Equal(batd, std, cmp.NoResolveTypeDef))
 }
 
 // By default, Equal resolves any type definitions to the underlying primitive
