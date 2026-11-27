@@ -187,25 +187,13 @@ func comparablePrimitivesCast(a any, b any) bool {
 	switch a.(type) {
 	case
 		int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64:
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
 		switch b.(type) {
 		case
 			int, int8, int16, int32, int64,
-			uint, uint8, uint16, uint32, uint64:
-			return true
-		default:
-			return false
-		}
-	case float32:
-		switch b.(type) {
-		case float32:
-			return true
-		default:
-			return false
-		}
-	case float64:
-		switch b.(type) {
-		case float64:
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
 			return true
 		default:
 			return false
@@ -397,42 +385,38 @@ func comparePrimitivesNoCast(a any, b any) int {
 func comparePrimitivesCast(a any, b any) int {
 	switch a := a.(type) {
 	case int, int8, int16, int32, int64:
+		ai, _ := cast.ToInt64(a)
 		switch b := b.(type) {
-		case int, int8, int16, int32, int64:
-			ai, _ := cast.ToInt64(a)
-			bi, _ := cast.ToInt64(b)
-			return gocmp.Compare(ai, bi)
-		case uint, uint8, uint16, uint32, uint64:
-			ai, _ := cast.ToInt64(a)
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
 			bi, _ := cast.ToInt64(b)
 			return gocmp.Compare(ai, bi)
 		default:
 			return -1
 		}
 	case uint, uint8, uint16, uint32, uint64:
+		au, _ := cast.ToUint64(a)
 		switch b := b.(type) {
-		case int, int8, int16, int32, int64:
-			au, _ := cast.ToUint64(a)
-			bu, _ := cast.ToUint64(b)
-			return gocmp.Compare(au, bu)
-		case uint, uint8, uint16, uint32, uint64:
-			au, _ := cast.ToUint64(a)
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
 			bu, _ := cast.ToUint64(b)
 			return gocmp.Compare(au, bu)
 		default:
 			return -1
 		}
-	case float32:
+	case float32, float64:
+		af, _ := cast.ToFloat64(a)
 		switch b := b.(type) {
-		case float32:
-			return gocmp.Compare(a, b)
-		default:
-			return -1
-		}
-	case float64:
-		switch b := b.(type) {
-		case float64:
-			return gocmp.Compare(a, b)
+		case
+			int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64:
+			bf, _ := cast.ToFloat64(b)
+			return gocmp.Compare(af, bf)
 		default:
 			return -1
 		}

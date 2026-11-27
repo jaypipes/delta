@@ -1,5 +1,7 @@
 package cmp
 
+import "fmt"
+
 // Options contains instructions to the Comparable and Compare functions
 // for how to compare subjects.
 type Options struct {
@@ -48,3 +50,13 @@ func WithNoConvert() Option {
 }
 
 var NoConvert = WithNoConvert()
+
+type OptionList []Option
+
+func (o OptionList) String() string {
+	opts := Options{}
+	for _, opt := range o {
+		opt(&opts)
+	}
+	return fmt.Sprintf("%+v", opts)
+}

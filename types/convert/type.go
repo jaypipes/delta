@@ -60,6 +60,15 @@ func Convertible(a any, b any) bool {
 	bIsSlice := types.IsSlice(b)
 	switch {
 	case aIsScalar && bIsScalar:
+		at := TypeOf(a)
+		bt := TypeOf(b)
+		if at == bt {
+			return true
+		}
+		if at == TypeFloat || bt == TypeFloat {
+			// Floats are not convertible to bools
+			return at != TypeBool && bt != TypeBool
+		}
 		return true
 	case aIsBA && bIsBA:
 		return true

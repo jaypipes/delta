@@ -21,6 +21,16 @@ func TestComparable_Invariants(t *testing.T) {
 		{f, f},
 		{c, 1},
 		{c, c},
+		// scalars are not comparable with non-scalars regardless of supplied
+		// options.
+		{"1", []struct{ a int }{{1}}},
+		{"1", []string{"1"}},
+		{testtypes.MyIntType(1), []int{1}},
+		{int(1), []testtypes.MyIntType{testtypes.MyIntType(0)}},
+		{int(1), testtypes.MySliceIntType{0}},
+		// Bool primitives can never be compared to float rimitives.
+		{true, float32(1)},
+		{false, float64(1)},
 	}
 	t.Run("not comparable", func(t *testing.T) {
 		assert := assert.New(t)
@@ -30,7 +40,7 @@ func TestComparable_Invariants(t *testing.T) {
 			assert.False(
 				cmp.Comparable(a, b),
 				fmt.Sprintf(
-					"[default options] expected %v (%T) "+
+					"[no options] expected %v (%T) "+
 						"and %v (%T) not to be comparable",
 					a, a, b, b,
 				),
@@ -40,7 +50,7 @@ func TestComparable_Invariants(t *testing.T) {
 			assert.False(
 				cmp.Comparable(b, a),
 				fmt.Sprintf(
-					"[default options] expected %v (%T) "+
+					"[no options] expected %v (%T) "+
 						"and %v (%T) not to be comparable",
 					b, b, a, a,
 				),
@@ -100,6 +110,20 @@ func TestComparable_Invariants(t *testing.T) {
 		// if either a or b is `nil`, Comparable always returns false
 		{nil, nil},
 		{nil, 1},
+		// scalar primitives compared to themselves are always comparable.
+		{int(1), int(1)},
+		{int8(1), int8(1)},
+		{int16(1), int16(1)},
+		{int32(1), int32(1)},
+		{int64(1), int64(1)},
+		{uint(1), uint(1)},
+		{uint8(1), uint8(1)},
+		{uint16(1), uint16(1)},
+		{uint32(1), uint32(1)},
+		{uint64(1), uint64(1)},
+		{float32(1), float32(1)},
+		{float64(1), float64(1)},
+		{true, false},
 	}
 
 	t.Run("comparable", func(t *testing.T) {
@@ -246,95 +270,6 @@ func ExampleComparable_invariants() {
 	// Is []byte comparable to a slice of int64? true
 	// Is a func comparable to the exact same func? false
 	// Is a channel comparable to the exact same channel? false
-}
-
-func TestComparable_TypeDefinitions(t *testing.T) {
-	assert := assert.New(t)
-
-	itd := testtypes.MyIntType(42)
-	i := int(42)
-
-	uitd := testtypes.MyUintType(42)
-	ui := uint(42)
-
-	assert.True(cmp.Comparable(itd, i))
-	assert.True(cmp.Comparable(itd, i, cmp.NoCast))
-	assert.True(cmp.Comparable(itd, i, cmp.NoConvert))
-	assert.False(cmp.Comparable(itd, i, cmp.NoResolveTypeDef))
-
-	assert.True(cmp.Comparable(uitd, ui))
-	assert.True(cmp.Comparable(uitd, ui, cmp.NoCast))
-	assert.True(cmp.Comparable(uitd, ui, cmp.NoConvert))
-	assert.False(cmp.Comparable(uitd, ui, cmp.NoResolveTypeDef))
-
-	// Two type definitions are resolved
-	assert.True(cmp.Comparable(itd, uitd))
-	// resolving type definitions don't change the logic of no cast, which
-	// cares about size and sign of the integer.
-	assert.False(cmp.Comparable(itd, uitd, cmp.NoCast))
-	// If we can't resolve the type definitions, we cannot compare...
-	assert.False(cmp.Comparable(itd, uitd, cmp.NoResolveTypeDef))
-
-	// Byte arrays are special since they are both scalars and slices.
-	batd := testtypes.MyByteArrayType("foo")
-	ba := []byte("foo")
-	std := testtypes.MyStringType("foo")
-	s := "foo"
-
-	assert.True(cmp.Comparable(batd, ba))
-	// And they are compared as strings even when using no cast.
-	assert.True(cmp.Comparable(batd, s, cmp.NoCast))
-	assert.True(cmp.Comparable(batd, std, cmp.NoCast))
-	// If we can't resolve the type definitions, we canot compare...
-	assert.False(cmp.Comparable(batd, s, cmp.NoResolveTypeDef))
-	assert.False(cmp.Comparable(batd, std, cmp.NoResolveTypeDef))
-}
-
-// By default, Comparable resolves any type definitions to the underlying primitive
-// types and compares the underlying types. Passing [cmp.NoResolveTypeDef]
-// disables this functionality and means that [Comparable] will return false when
-// comparing a variable with a primitive type to a variable of a the same
-// underlying primitive type even if the underlying values are the same.
-func ExampleComparable_type_definitions() {
-
-	type myIntType int
-	type myUintType uint
-
-	itd := myIntType(42)
-	i := int(42)
-
-	uitd := myUintType(42)
-
-	// type definitions over primitives are resolved to their underlying
-	// primitive before comparison.
-	fmt.Printf(
-		"Is %v (%T) comparable to %v (%T) when passing no options? %t\n",
-		itd, itd, i, i,
-		cmp.Comparable(itd, i),
-	)
-
-	// But the same things are not comparable when passing the
-	// [cmp.NoResolveTypeDef] option.
-	fmt.Printf(
-		"Is %v (%T) comparable to %v (%T) when passing cmp.NoResolveTypeDef? %t\n",
-		itd, itd, i, i,
-		cmp.Comparable(itd, i, cmp.NoResolveTypeDef),
-	)
-
-	// Resolving type definitions happens before any casting or conversion of
-	// the subjects, so passing [cmp.NoCast] when resolving type definitions
-	// still results in the same comparison logic just on the underlying
-	// primitive.
-	fmt.Printf(
-		"Is %v (%T) comparable to %v (%T) when passing cmp.NoCast? %t\n",
-		itd, itd, uitd, uitd,
-		cmp.Comparable(itd, uitd, cmp.NoCast),
-	)
-
-	// Output:
-	// Is 42 (cmp_test.myIntType) comparable to 42 (int) when passing no options? true
-	// Is 42 (cmp_test.myIntType) comparable to 42 (int) when passing cmp.NoResolveTypeDef? false
-	// Is 42 (cmp_test.myIntType) comparable to 42 (cmp_test.myUintType) when passing cmp.NoCast? false
 }
 
 func TestComparable_DefaultOptions(t *testing.T) {

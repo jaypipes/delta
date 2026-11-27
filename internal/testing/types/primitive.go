@@ -46,9 +46,12 @@ var SlicePrimitiveZeroValues = []any{
 
 var UniquePairsPrimitiveZeroValues = genutil.UniquePairs(PrimitiveZeroValues)
 var UniquePairsSlicePrimitiveZeroValues = genutil.UniquePairs(SlicePrimitiveZeroValues)
-var UniquePairsPrimitiveIntegerZeroValues = genutil.UniquePairs(PrimitiveZeroValues[0:9])
+var PrimitiveIntegerZeroValues = PrimitiveZeroValues[0:9]
+var UniquePairsPrimitiveIntegerZeroValues = genutil.UniquePairs(PrimitiveIntegerZeroValues)
 var UniquePairsSlicePrimitiveIntegerZeroValues = genutil.UniquePairs(SlicePrimitiveZeroValues[0:9])
-var UniquePairsPrimitiveFloatZeroValues = genutil.UniquePairs(PrimitiveZeroValues[10:11])
+var PrimitiveFloatZeroValues = PrimitiveZeroValues[10:11]
+var UniquePairsPrimitiveFloatZeroValues = genutil.UniquePairs(PrimitiveFloatZeroValues)
 var UniquePairsSlicePrimitiveFloatZeroValues = genutil.UniquePairs(SlicePrimitiveZeroValues[10:11])
-var UniquePairsPrimitiveStringZeroValues = genutil.UniquePairs(PrimitiveZeroValues[12:13])
+var PrimitiveStringZeroValues = PrimitiveZeroValues[12:13]
+var UniquePairsPrimitiveStringZeroValues = genutil.UniquePairs(PrimitiveStringZeroValues)
 var UniquePairsSlicePrimitiveStringZeroValues = genutil.UniquePairs(SlicePrimitiveZeroValues[12:13])

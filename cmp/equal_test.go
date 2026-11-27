@@ -26,6 +26,13 @@ func TestEqual_Invariants(t *testing.T) {
 		{f, f},
 		{c, 1},
 		{c, c},
+		// scalars are not comparable with non-scalars regardless of supplied
+		// options and therefore are never equal.
+		{"1", []struct{ a int }{{1}}},
+		{"1", []string{"1"}},
+		{testtypes.MyIntType(1), []int{1}},
+		{int(1), []testtypes.MyIntType{testtypes.MyIntType(0)}},
+		{int(1), testtypes.MySliceIntType{0}},
 	}
 	t.Run("not equal", func(t *testing.T) {
 		assert := assert.New(t)
@@ -35,7 +42,7 @@ func TestEqual_Invariants(t *testing.T) {
 			assert.False(
 				cmp.Equal(a, b),
 				fmt.Sprintf(
-					"[default options] expected %v (%T) "+
+					"[no options] expected %v (%T) "+
 						"and %v (%T) not to be equal",
 					a, a, b, b,
 				),
@@ -45,7 +52,7 @@ func TestEqual_Invariants(t *testing.T) {
 			assert.False(
 				cmp.Equal(b, a),
 				fmt.Sprintf(
-					"[default options] expected %v (%T) "+
+					"[no options] expected %v (%T) "+
 						"and %v (%T) not to be equal",
 					b, b, a, a,
 				),
