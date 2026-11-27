@@ -34,4 +34,4 @@ go-vet: ## Run go vet against code.
 
 .PHONY: go-mod-tidy
 go-mod-tidy: ## Run go mod tidy against the repository.
-	go mod tidy
+	go mod tidy -modfile go_test.mod
