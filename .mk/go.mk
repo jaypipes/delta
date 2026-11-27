@@ -26,11 +26,11 @@ endef
 
 .PHONY: go-fmt
 go-fmt: ## Run go fmt against code.
-	go fmt ./...
+	go fmt -modfile go_test.mod  ./...
 
 .PHONY: go-vet
 go-vet: ## Run go vet against code.
-	go vet ./...
+	go vet -modfile go_test.mod ./...
 
 .PHONY: go-mod-tidy
 go-mod-tidy: ## Run go mod tidy against the repository.
