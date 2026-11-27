@@ -7,4 +7,7 @@ test: test-unit ## Run all tests.
 
 .PHONY: test-unit
 test-unit: ## Run all unit tests.
-	@go test -v ./... -coverprofile=cover.out
+	@go test -modfile=go_test.mod -v -coverprofile=cover.out ./...
+
+test-bench: ## Run all benchmark tests.
+	@cd cmp; go test -modfile=../go_test.mod -bench=. -count=3; cd ..
