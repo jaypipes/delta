@@ -2,7 +2,7 @@ package diff
 
 import (
 	"github.com/jaypipes/delta/cmp"
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
 )
 
 // Diff returns a Delta representing the set of differences between two

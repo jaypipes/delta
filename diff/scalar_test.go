@@ -6,7 +6,7 @@ import (
 
 	"github.com/jaypipes/delta/cmp"
 	"github.com/jaypipes/delta/diff"
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
 	"github.com/stretchr/testify/require"
 )
 

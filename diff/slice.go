@@ -3,12 +3,13 @@ package diff
 import (
 	"slices"
 
+	"github.com/samber/lo"
+
 	"github.com/jaypipes/delta/cmp"
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
 	"github.com/jaypipes/delta/types"
 	"github.com/jaypipes/delta/types/cast"
 	"github.com/jaypipes/delta/types/convert"
-	"github.com/samber/lo"
 )
 
 // collectSliceDifferences collects any detected differences in the supplied

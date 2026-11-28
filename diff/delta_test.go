@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/jaypipes/delta/diff"
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
+	"github.com/stretchr/testify/require"
 )
 
 var (

@@ -3,7 +3,7 @@ package fieldpath_test
 import (
 	"testing"
 
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
 	"github.com/stretchr/testify/require"
 )
 

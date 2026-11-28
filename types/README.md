@@ -1,17 +1,17 @@
-`github.com/jaypipes/delta/types` contains type inspection and discovery
-functions.
+Package `types` contains functions for type inspection.
+
+Subpackages `types/cast` and `types/convert` contain functions for type casting
+and type conversion, respectively.
 
 # Category
 
-`delta` groups data and variables into these type categories:
+`delta` groups data and variables into three categories:
 
 * `Scalar` is for things that represent a singular value
 * `Slice` is for things contain zero or more values addressable via an
   integer index
 * `Record` is for things that contain zero or more values addressable via a
   named key or field
-
-Use `CategoryOf` to determine the `Category` of a subject.
 
 <details>
 <summary>Use `CategoryOf` to determine the `Category` of a subject</summary>
@@ -52,7 +52,7 @@ func main() {
     }
 
     for _, subject := range subjects {
-        cat := types.Category(subject)
+        cat := types.CategoryOf(subject)
         fmt.Printf(
             "%v (%T) is types.%s\n",
             subject, cat,

@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/jaypipes/delta/cmp"
-	"github.com/jaypipes/delta/fieldpath"
+	"github.com/jaypipes/delta/diff/fieldpath"
 	"github.com/samber/lo"
 )
 

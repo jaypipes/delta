@@ -1,3 +1,116 @@
+Package `cmp` contains functions for determining if two things are comparable,
+and comparing those things for equality and sorting.
+
+* [StrictEqual](#strict-equal)
+* [Equal](#equal)
+* [Equivalent](#equivalent)
+* [Compare](#compare)
+
+# StrictEqual
+
+Returns `true` if subjects `a` and `b` are strictly equal, `false` otherwise.
+
+If both `a` and `b` are `nil`, returns `true`.
+
+If either `a` or `b` is `nil`, returns `false`.
+
+Returns `false` if the types of the subjects cannot be compared for strict
+equality.
+
+> [!NOTE]
+> Use [`StrictEqualComparable`](#strictequalcomparable) to test whether two
+> subjects can be compared for strict equality.
+>
+> Use [`StrictEqualAndComparable`](#strictequalandcomparable) to test
+> whether two subjects can be compared for strict equality and whether they are
+> strictly equal.
+
+> [!CAUTION]
+> When `a` and `b` are slices, the contents of the array of elements is **NOT**
+> sorted before comparing for strict equality. This means `[]int{1, 2}` and
+> `[]int{2, 1}` are not strictly equal. If your code considers those two slices
+> to be the same, use [`Equivalent`](#equivalent)
+
+## StrictEqualComparable
+
+Indicates whether two subjects `a` and `b`, can be compared for strict
+equality.
+
+The [type category](#type-category) of `a` must match the type category of `b`.
+
+If the type category is `Scalar`:
+
+- If the underlying Go type of `a` is an integer, `b` must be the *exact* same
+  Go type, including size and sign.
+
+<details>
+<summary>StrictEqual comparing integer types</summary>
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/jaypipes/delta"
+)
+
+type MyIntType int
+
+const (
+    MyIntTypeZero MyIntType = 0
+)
+
+func main() {
+    a := int(0)
+    subjects := []any{
+        int(0),
+        uint(0),
+        float32(0.0),
+        int8(0),
+        MyIntTypeZero,
+    }
+
+    for _, b := range subjects {
+        got := delta.StrictEqual(a, b)
+        fmt.Printf(
+            "is %v (%T) strictly equal to %v (%T)? %t\n",
+            a, a, b, b, got,
+        )
+    }
+
+    mt1 := MyIntTypeZero
+    mt2 := MyIntTypeZero
+
+    got := delta.StrictEqual(mt1, mt2)
+    fmt.Printf(
+        "is %v (%T) strictly equal to %v (%T)? %t\n",
+        mt1, mt1, mt2, mt2, got,
+    )
+}
+```
+
+will output:
+
+```
+is 0 (int) strictly equal to 0 (int)? true
+is 0 (int) strictly equal to 0 (uint)? false
+is 0 (int) strictly equal to 0 (float32)? false
+is 0 (int) strictly equal to 0 (int8)? false
+is 0 (int) strictly equal to 0 (MyIntType)? false
+is 0 (MyIntType) strictly equal to 0 (MyIntType)? true
+```
+</details>
+
+- If the underlying Go type of `a` is a float, `b` must be the *exact* same Go
+  type, including size.
+- If the underlying Go type of `a` is `bool`, `b` must be a `bool`.
+- If the underlying Go type of `a` is `string` or `[]byte`, `b` must be either
+  `string` or `[]byte`.
+
+If the type category is `Slice`:
+
+- The type category of the elements in `a` and `b` must be the same.
 # Compare
 
 * [`StrictEqual`](#strict-equal) returns true if two arguments are

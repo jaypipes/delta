@@ -3,8 +3,9 @@ package diff
 import (
 	"fmt"
 
-	"github.com/jaypipes/delta/fieldpath"
 	"github.com/samber/lo"
+
+	"github.com/jaypipes/delta/diff/fieldpath"
 )
 
 // DifferenceKind differentiates kinds of Differences
