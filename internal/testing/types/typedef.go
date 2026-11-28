@@ -75,9 +75,12 @@ var SlicePrimitiveTypeDefZeroValues = []any{
 
 var UniquePairsPrimitiveTypeDefZeroValues = genutil.UniquePairs(PrimitiveTypeDefZeroValues)
 var UniquePairsSlicePrimitiveTypeDefZeroValues = genutil.UniquePairs(SlicePrimitiveTypeDefZeroValues)
-var UniquePairsPrimitiveTypeDefIntegerZeroValues = genutil.UniquePairs(PrimitiveTypeDefZeroValues[0:9])
+var PrimitiveIntegerTypeDefZeroValues = PrimitiveTypeDefZeroValues[0:9]
+var UniquePairsPrimitiveTypeDefIntegerZeroValues = genutil.UniquePairs(PrimitiveIntegerTypeDefZeroValues)
 var UniquePairsSlicePrimitiveTypeDefIntegerZeroValues = genutil.UniquePairs(SlicePrimitiveTypeDefZeroValues[0:9])
-var UniquePairsPrimitiveTypeDefFloatZeroValues = genutil.UniquePairs(PrimitiveTypeDefZeroValues[10:11])
+var PrimitiveFloatTypeDefZeroValues = PrimitiveTypeDefZeroValues[10:11]
+var UniquePairsPrimitiveTypeDefFloatZeroValues = genutil.UniquePairs(PrimitiveFloatTypeDefZeroValues)
 var UniquePairsSlicePrimitiveTypeDefFloatZeroValues = genutil.UniquePairs(SlicePrimitiveTypeDefZeroValues[10:11])
-var UniquePairsPrimitiveTypeDefStringZeroValues = genutil.UniquePairs(PrimitiveTypeDefZeroValues[12:13])
+var PrimitiveStringTypeDefZeroValues = PrimitiveTypeDefZeroValues[12:13]
+var UniquePairsPrimitiveTypeDefStringZeroValues = genutil.UniquePairs(PrimitiveStringTypeDefZeroValues)
 var UniquePairsSlicePrimitiveTypeDefStringZeroValues = genutil.UniquePairs(SlicePrimitiveTypeDefZeroValues[12:13])
