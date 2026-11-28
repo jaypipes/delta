@@ -17,6 +17,9 @@ func TestIsFloat(t *testing.T) {
 		struct{ a string }{a: "1"},
 		func() {},
 		nil,
+		int(42),
+		false,
+		"foo", // string is not byte array...
 		map[string]string{"a": "a"},
 		[]string{"a"},
 		testtypes.MyStructType{A: 1},

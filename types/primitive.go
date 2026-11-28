@@ -48,9 +48,9 @@ func IsPrimitiveInteger(subject any) bool {
 	}
 }
 
-// IsPrimitiveSigned returns true if the supplied subject is one of the
+// IsPrimitiveSignedIntger returns true if the supplied subject is one of the
 // built-in signed Go integer types of any size.
-func IsPrimitiveSigned(subject any) bool {
+func IsPrimitiveSignedInteger(subject any) bool {
 	switch subject.(type) {
 	case int, int8, int16, int32, int64:
 		return true

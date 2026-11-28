@@ -17,6 +17,8 @@ func TestIsByteArray(t *testing.T) {
 		func() {},
 		nil,
 		int(42),
+		float32(42.0),
+		false,
 		"foo", // string is not byte array...
 		map[string]string{"a": "a"},
 		[]string{"a"},

@@ -11,8 +11,20 @@ func IsFloat(subject any) bool {
 	case IsPrimitiveFloat(subject):
 		return true
 	default:
-		t := reflect.TypeOf(subject)
-		k := t.Kind()
-		return k == reflect.Float32 || k == reflect.Float64
+		return IsFloatTypeDef(subject)
 	}
+}
+
+// IsFloatTypeDef returns true if the supplied subject is a type
+// definition over `float32` or `float64.
+func IsFloatTypeDef(subject any) bool {
+	if !IsPrimitiveTypeDef(subject) {
+		return false
+	}
+	t := reflect.TypeOf(subject)
+	k := t.Kind()
+	if k == reflect.Float32 || k == reflect.Float64 {
+		return true
+	}
+	return false
 }
