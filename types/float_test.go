@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsFloats(t *testing.T) {
+func TestIsFloat(t *testing.T) {
 	notFloats := []any{
 		testtypes.NilInterface,
 		testtypes.NotNilInterface,

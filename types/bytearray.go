@@ -1,14 +1,17 @@
 package types
 
+import "reflect"
+
 // IsByteArray returns true if the supplied subject is a `[]byte` or a type
 // definition over `[]byte`
 func IsByteArray(subject any) bool {
-	switch subject.(type) {
-	case []byte:
-		return true
-	default:
-		return IsByteArrayTypeDef(subject)
+	if subject == nil {
+		return false
 	}
+	if _, ok := subject.([]byte); ok {
+		return true
+	}
+	return IsByteArrayTypeDef(subject)
 }
 
 // IsByteArrayTypeDef returns true if the supplied subject is a type
@@ -17,5 +20,14 @@ func IsByteArray(subject any) bool {
 // Note that Both `string` and `MyByteArrayType` are scalars.  However, `string`
 // is not a slice, but `MyByteArrayType` *is* a slice.
 func IsByteArrayTypeDef(subject any) bool {
-	return IsPrimitiveTypeDef(subject) && IsSlice(subject)
+	if !IsPrimitiveTypeDef(subject) {
+		return false
+	}
+	t := reflect.TypeOf(subject)
+	k := t.Kind()
+	if k != reflect.Slice {
+		return false
+	}
+	et := t.Elem()
+	return et.Kind() == reflect.Uint8
 }

@@ -107,7 +107,6 @@ func IsPrimitiveTypeDef(subject any) bool {
 		reflect.Float32, reflect.Float64,
 		reflect.String:
 		return true
-	// string is just an immutable []byte
 	case reflect.Slice:
 		et := t.Elem()
 		return et.Kind() == reflect.Uint8
