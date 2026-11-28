@@ -7,11 +7,11 @@ test: test-unit ## Run all tests.
 
 .PHONY: test-unit
 test-unit: ## Run all unit tests.
-	@go test -modfile=go_test.mod ./...
+	@go test ./...
 
 .PHONY: test-cover
 test-cover: ## Run all unit tests with coverage.
-	@go test -modfile=go_test.mod -coverprofile=cover.out ./...
+	@go test -coverprofile=cover.out ./...
 
 .PHONY: test-bench
 test-bench: ## Run all benchmark tests.

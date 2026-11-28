@@ -8,4 +8,5 @@ GIT_COMMIT ?= $(shell git rev-parse HEAD)
 
 include .mk/go.mk
 include .mk/test.mk
+include .mk/bench.mk
 include .mk/help.mk
